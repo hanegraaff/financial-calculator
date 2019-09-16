@@ -40,11 +40,10 @@ def get_current_eps(ticker : str):
         ticker, 2018, 2018, income_statement_filter)
 
       net_income = income_statements[2018]['netincome']
-      weighted_avg_shares2 = income_statements[2018]['weightedavedilutedsharesos']
       print("net_income: ", net_income)
 
 
-      print("calculates EPS: ", net_income/weighted_avg_shares2)
+      print("Basic EPS: ", net_income/weighted_avg_shares)
 
 
 def get_historical_income_stmt(ticker: str, year_from: int,
