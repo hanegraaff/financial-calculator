@@ -2,8 +2,9 @@
 
 
 """
-import financial_calculator
+from financial import calculator
 import argparse
+import time
 from exception.exceptions import BaseError
 from exception.exceptions import ValidationError
 
@@ -53,7 +54,9 @@ else:
 
 for ticker in ticker_list:
   try:
-    graham_number = financial_calculator.get_current_graham_number(ticker, year)
+    if ticker == "DWDP":
+          x = 0
+    graham_number = calculator.get_graham_number(ticker, year)
     print("The graham number for %s, %d is: %2f" % (ticker, year, graham_number))
   except BaseError as be:
     print("Could not calculate graham number for %s, %d because: %s" % (ticker, year, str(be)))

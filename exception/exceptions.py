@@ -39,6 +39,13 @@ class DataError(BaseError):
     def __print_cause__(self):
         return "Data Error: " + super().__print_cause__()
 
+
+class CalculationError(BaseError):
+    """
+        A class representing a calculation error
+    """
+    def __print_cause__(self):
+        return "Calculation Error: " + super().__print_cause__()
     
 
     

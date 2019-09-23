@@ -4,11 +4,12 @@ This module implements a number of financial formulas used to value
 stocks using financial statemements
 """
 
-import financial_data
+from financial import intrinio_data
 import math
+from exception.exceptions import CalculationError
 
 
-def get_current_graham_number(ticker : str, year : int):
+def get_graham_number(ticker : str, year : int):
     """
         Returns the Graham number given a ticker symbol and a year.
         The year will be used to select the appropriate 10k reports that contain the
@@ -26,8 +27,14 @@ def get_current_graham_number(ticker : str, year : int):
         -------
         The Graham number for the supplied ticker symbol and year
     """
-    eps = financial_data.get_diluted_eps(ticker, year)
-    book_value_per_share = financial_data.get_bookvalue_per_share(ticker, year)
+    eps = intrinio_data.get_diluted_eps(ticker, year)
+    book_value_per_share = intrinio_data.get_bookvalue_per_share(ticker, year)
+
+    if eps <= 0:
+        raise CalculationError("EPS value [%d] is invalid" % eps, None)
+
+    if book_value_per_share <= 0:
+        raise CalculationError("Book Value Share per value [%d] is invalid" % book_value_per_share, None)
 
     graham_number = math.sqrt(
         15 * 1.5 * (eps * book_value_per_share))
@@ -70,7 +77,7 @@ def get_historical_fcf(ticker: str, year_from: int, year_to: int):
         'purchaseofplantpropertyandequipment'
     ]
 
-    cashflow_statements = financial_data.get_historical_cashflow_stmt(
+    cashflow_statements = intrinio_data.get_historical_cashflow_stmt(
         ticker, year_from, year_to, fcf_tag_filter)
 
     for year, cashflow in sorted(cashflow_statements.items()):
