@@ -46,8 +46,7 @@ if (ticker != None):
 else:
     try:
       with open(ticker_file) as f:
-        ticker_list = f.read().splitlines() 
-        print(ticker_list)
+        ticker_list = f.read().splitlines()
     except Exception as e:
         print("Could run script, because, %s" % (str(e)) )
         exit(-1)
