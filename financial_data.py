@@ -2,6 +2,9 @@ import datetime
 import intrinio_sdk
 from intrinio_sdk.rest import ApiException
 import os
+import math
+from exception.exceptions import DataError, ValidationError
+from financial import util
 
 """
 This module is a value add to the Intrinion SDK
@@ -15,39 +18,62 @@ intrinio_sdk.ApiClient().configuration.api_key['api_key'] = API_KEY
 
 fundamentals_api = intrinio_sdk.FundamentalsApi()
 data_point_api = intrinio_sdk.DataPointApi()
+company_api = intrinio_sdk.CompanyApi()
 
 
-def get_current_eps(ticker : str):
-      
-      #
-      # Get average weighted shares
-      #
-      weighted_avg_shares = __read_current_financial_metric__(ticker,'adjweightedavebasicsharesos')
-      diluted_eps =  __read_current_financial_metric__(ticker,'adjdilutedeps')
-      #preferred_dividends = __read_current_financial_metric__(ticker,'preferred_dividends')
-      
-      print("weighted_avg_shares: ", weighted_avg_shares)
-      print("diluted_eps: ", diluted_eps)
-      #print("preferred_dividends: ", preferred_dividends)
+def get_diluted_eps(ticker: str, year: int):
+    '''
+      Returns Intrinio's adjdilutedeps metric for the given year.
+      This value is calcualted the same way as:
 
-      #
-      # Determine NET Incocme from Income statements
-      #
-      income_statement_filter = None
+        This is the description from Intrinio documentation:
 
-      #TODO: figure out a way to get most currentn statement
-      income_statements = get_historical_income_stmt(
-        ticker, 2018, 2018, income_statement_filter)
+        Diluted EPS is a performance metric used to gauge the quality of a company's
+        earnings per share (EPS) if all convertible securities were exercised.
+        Convertible securities are all outstanding convertible preferred shares,
+        convertible debentures, stock options (primarily employee-based) and warrants.
+        Adjusted for stock splits.
 
-      net_income = income_statements[2018]['netincome']
-      print("net_income: ", net_income)
+      Parameters
+      ----------
+      ticker : str
+        Ticker Symbol
+      year : int
+        Current or hisorical year to look up
+
+      Returns
+      -----------
+      A number representing the diluted eps
+    '''
+    return __read_financial_metric__(ticker, year, 'adjdilutedeps')
 
 
-      print("Basic EPS: ", net_income/weighted_avg_shares)
+def get_bookvalue_per_share(ticker: str, year: int):
+    '''
+      Returns Intrinio's bookvaluepershare metric for the given year.
+      This value is calcualted the same way as:
+
+        totalequity/weightedavedilutedsharesos
+
+        from the income statement.
+
+      Parameters
+      ----------
+      ticker : str
+        Ticker Symbol
+      year : int
+        Current or hisorical year to look up
+
+      Returns
+      -----------
+      A number representing the diluted eps
+    '''
+
+    return __read_financial_metric__(ticker, year, 'bookvaluepershare')
 
 
 def get_historical_income_stmt(ticker: str, year_from: int,
-                                year_to: int, tag_filter_list: list):
+                               year_to: int, tag_filter_list: list):
     """
       returns a dictionary containing partial or complete income statements given
       a ticker symbol, year from, year to and a list of tag filters
@@ -79,15 +105,18 @@ def get_historical_income_stmt(ticker: str, year_from: int,
     filtered_income_statements = {}
     ticker = ticker.upper()
 
-    hist_income_statements = __read_historical_financial_statement__(ticker, 'income_statement', year_from, year_to)
+    hist_income_statements = __read_historical_financial_statement__(
+        ticker, 'income_statement', year_from, year_to)
 
     for year, income_statement in hist_income_statements.items():
-      filtered_income_statements[year] = __filter_financial_stmt__(income_statement, tag_filter_list)
+        filtered_income_statements[year] = __filter_financial_stmt__(
+            income_statement, tag_filter_list)
 
     return filtered_income_statements
 
+
 def get_historical_balance_sheet(ticker: str, year_from: int,
-                                year_to: int, tag_filter_list: list):
+                                 year_to: int, tag_filter_list: list):
     """
       returns a dictionary containing partial or complete balance sheets given
       a ticker symbol, year from, year to and a list of tag filters
@@ -119,10 +148,12 @@ def get_historical_balance_sheet(ticker: str, year_from: int,
     filtered_balance_sheets = {}
     ticker = ticker.upper()
 
-    hist_balance_sheets = __read_historical_financial_statement__(ticker, 'balance_sheet_statement', year_from, year_to)
+    hist_balance_sheets = __read_historical_financial_statement__(
+        ticker, 'balance_sheet_statement', year_from, year_to)
 
     for year, balace_sheet in hist_balance_sheets.items():
-      filtered_balance_sheets[year] = __filter_financial_stmt__(balace_sheet, tag_filter_list)
+        filtered_balance_sheets[year] = __filter_financial_stmt__(
+            balace_sheet, tag_filter_list)
 
     return filtered_balance_sheets
 
@@ -161,10 +192,12 @@ def get_historical_cashflow_stmt(ticker: str, year_from: int,
     filtered_casflows = {}
     ticker = ticker.upper()
 
-    hist_casflow_statements = __read_historical_financial_statement__(ticker, 'cash_flow_statement', year_from, year_to)
+    hist_casflow_statements = __read_historical_financial_statement__(
+        ticker, 'cash_flow_statement', year_from, year_to)
 
     for year, cashflow_statement in hist_casflow_statements.items():
-      filtered_casflows[year] = __filter_financial_stmt__(cashflow_statement, tag_filter_list)
+        filtered_casflows[year] = __filter_financial_stmt__(
+            cashflow_statement, tag_filter_list)
 
     return filtered_casflows
 
@@ -225,7 +258,8 @@ def __read_historical_financial_statement__(ticker: str, statement_name: str, ye
 
     try:
         for i in range(year_from, year_to + 1):
-            satement_name = ticker + "-"  + statement_name + "-" + str(i) + "-FY"
+            satement_name = ticker + "-" + \
+                statement_name + "-" + str(i) + "-Q3"
 
             statement = fundamentals_api.get_fundamental_standardized_financials(
                 satement_name)
@@ -234,14 +268,36 @@ def __read_historical_financial_statement__(ticker: str, statement_name: str, ye
 
     except ApiException as e:
         # todo rethrow a different exception
-        print("Exception when reading %s statement APIs: %s" % (statement_name, e))
+        print("Exception when reading %s statement APIs: %s" %
+              (statement_name, e))
         return {}
 
     return hist_statements
 
-def __read_current_financial_metric__(ticker : str, tag : str):
-  try:
-    return data_point_api.get_data_point_number(ticker, tag)
-  except ApiException as e:
-    print("Exception when calling DataPointApi when reading metric: %s, %s" % (tag, e))
-    return None
+
+def __read_financial_metric__(ticker: str, year: int, tag: str):
+
+    (start_date, end_date) = util.get_fiscal_year_period(year, 0)
+    frequency = 'yearly'
+
+    try:
+        api_response = company_api.get_company_historical_data(
+            ticker, tag, frequency=frequency, start_date=start_date, end_date=end_date)
+    except ApiException as ae:
+        raise DataError(
+            "Error retrieving ('%s', %d) -> '%s' from Intrinion API" % (ticker, year, tag), ae)
+    except Exception as e:
+        raise ValidationError(
+            "Error parsing ('%s', %d) -> '%s' from Intrinion API" % (ticker, year, tag), e)
+
+    if len(api_response.historical_data) == 0:
+        raise DataError("No Data returned for ('%s', %d) -> '%s' from Intrinion API" % (ticker, year, tag), None)
+
+    return api_response.historical_data[0].value
+
+
+def __read_current_financial_metric__(ticker: str, tag: str):
+    try:
+        return data_point_api.get_data_point_number(ticker, tag)
+    except ApiException as e:
+        raise

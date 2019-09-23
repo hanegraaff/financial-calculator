@@ -1,13 +1,38 @@
-import financial_data
+"""Financial Calculator
 
-"""
 This module implements a number of financial formulas used to value
 stocks using financial statemements
 """
 
+import financial_data
+import math
 
-def get_current_graham_number(ticker: str):
-    return financial_data.get_current_eps(ticker)
+
+def get_current_graham_number(ticker : str, year : int):
+    """
+        Returns the Graham number given a ticker symbol and a year.
+        The year will be used to select the appropriate 10k reports that contain the
+        required inputs.
+
+        Parameters
+        ----------
+        ticker : str
+        Ticker Symbol
+        year : int
+        The current or historical year of the Graham number. Must match the year
+        of an existing 10k report.
+
+        Returns
+        -------
+        The Graham number for the supplied ticker symbol and year
+    """
+    eps = financial_data.get_diluted_eps(ticker, year)
+    book_value_per_share = financial_data.get_bookvalue_per_share(ticker, year)
+
+    graham_number = math.sqrt(
+        15 * 1.5 * (eps * book_value_per_share))
+
+    return graham_number
 
 
 def get_historical_fcf(ticker: str, year_from: int, year_to: int):
