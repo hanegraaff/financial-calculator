@@ -5,9 +5,10 @@ import os
 import math
 from exception.exceptions import DataError, ValidationError
 from financial import util
+import logging
 
 """
-This module is a value add to the Intrinion SDK
+This module is a value add to the Intrinio SDK
 and implements a number of functions to read current and historical
 financial statements
 """
@@ -19,6 +20,77 @@ intrinio_sdk.ApiClient().configuration.api_key['api_key'] = API_KEY
 fundamentals_api = intrinio_sdk.FundamentalsApi()
 data_point_api = intrinio_sdk.DataPointApi()
 company_api = intrinio_sdk.CompanyApi()
+
+
+def get_historical_revenue(ticker: str, year_from: int, year_to: int):
+    '''
+      Returns a dictionary of year->"total revenue" for the supplied ticker and 
+      range of years.
+
+
+      Parameters
+      ----------
+      ticker : str
+        Ticker Symbol
+      year_from : int
+        The beginning year to look up
+      end_from : int
+        The end year to look up
+
+      Returns
+      -----------
+      a dictionary of year->"fcff value" like this
+      {
+        2010: 123,
+        2012: 234,
+        2013: 345,
+        2014: 456,
+      }
+    '''
+
+    return __read_financial_metrics__(ticker, year_from, year_to, 'totalrevenue')
+
+
+def get_historical_fcff(ticker: str, year_from: int, year_to: int):
+    '''
+      Returns a dictionary of year->"fcff value" for the supplied ticker and 
+      range of years.
+
+        This is the description from Intrinio documentation:
+
+        Definition
+        Free cash flow for the firm (FCFF) is a measure of financial performance that 
+        expresses the net amount of cash that is generated for a firm after expenses, 
+        taxes and changes in net working capital and investments are deducted. 
+        FCFF is essentially a measurement of a company's profitability after all expenses 
+        and reinvestments. It's one of the many benchmarks used to compare and analyze 
+        financial health.
+
+        Formula
+        freecashflow = nopat - investedcapitalincreasedecrease
+
+
+      Parameters
+      ----------
+      ticker : str
+        Ticker Symbol
+      year_from : int
+        The beginning year to look up
+      end_from : int
+        The end year to look up
+
+      Returns
+      -----------
+      a dictionary of year->"fcff value" like this
+      {
+        2010: 123,
+        2012: 234,
+        2013: 345,
+        2014: 456,
+      }
+    '''
+
+    return __read_financial_metrics__(ticker, year_from, year_to, 'freecashflow')
 
 
 def get_diluted_eps(ticker: str, year: int):
@@ -101,18 +173,9 @@ def get_historical_income_stmt(ticker: str, year_from: int,
       },}
 
     """
-    # return value
-    filtered_income_statements = {}
-    ticker = ticker.upper()
 
-    hist_income_statements = __read_historical_financial_statement__(
-        ticker, 'income_statement', year_from, year_to)
-
-    for year, income_statement in hist_income_statements.items():
-        filtered_income_statements[year] = __filter_financial_stmt__(
-            income_statement, tag_filter_list)
-
-    return filtered_income_statements
+    return __read_historical_financial_statement__(
+        ticker.upper(), 'income_statement', year_from, year_to, tag_filter_list)
 
 
 def get_historical_balance_sheet(ticker: str, year_from: int,
@@ -144,18 +207,8 @@ def get_historical_balance_sheet(ticker: str, year_from: int,
       },}
 
     """
-    # return value
-    filtered_balance_sheets = {}
-    ticker = ticker.upper()
-
-    hist_balance_sheets = __read_historical_financial_statement__(
-        ticker, 'balance_sheet_statement', year_from, year_to)
-
-    for year, balace_sheet in hist_balance_sheets.items():
-        filtered_balance_sheets[year] = __filter_financial_stmt__(
-            balace_sheet, tag_filter_list)
-
-    return filtered_balance_sheets
+    return __read_historical_financial_statement__(
+        ticker.upper(), 'balance_sheet_statement', year_from, year_to, tag_filter_list)
 
 
 def get_historical_cashflow_stmt(ticker: str, year_from: int,
@@ -187,33 +240,20 @@ def get_historical_cashflow_stmt(ticker: str, year_from: int,
       },}
 
     """
-
-    # return value
-    filtered_casflows = {}
-    ticker = ticker.upper()
-
-    hist_casflow_statements = __read_historical_financial_statement__(
-        ticker, 'cash_flow_statement', year_from, year_to)
-
-    for year, cashflow_statement in hist_casflow_statements.items():
-        filtered_casflows[year] = __filter_financial_stmt__(
-            cashflow_statement, tag_filter_list)
-
-    return filtered_casflows
+    return __read_historical_financial_statement__(
+        ticker.upper(), 'cash_flow_statement', year_from, year_to, tag_filter_list)
 
 
-def __filter_financial_stmt__(std_financials_list: list, tag_filter_list: list):
+def __transform_financial_stmt__(std_financials_list: list, tag_filter_list: list):
     """
-      Helper function that returns specific financials from a statement
-      given a list of Intrinio tags. 
+      Helper function that transforms a financial statement stored in
+      the raw Intrinio format into a more user friendly one.
 
-      For example we could extract "operating cashflow"
-      and "capex" from the cash flow statement.
 
       Parameters
       ----------
       std_financials_list : list
-        List of standardized financials extracted from the 
+        List of standardized financials extracted from the Intrinio API
       tag_filter_list : list
         List of data tags used to filter results. The name of each tag
         must match an expected one from the Intrinio API
@@ -240,17 +280,50 @@ def __filter_financial_stmt__(std_financials_list: list, tag_filter_list: list):
     return results
 
 
-def __read_historical_financial_statement__(ticker: str, statement_name: str, year_from: int, year_to: int):
+def __read_historical_financial_statement__(ticker: str, statement_name: str, year_from: int, year_to: int, tag_filter_list: list):
     """
-      Helper function that will read the Intrinio API for each year in the range and
-      return the results a dictionary of {year: APIResponse}
-
-      for example:
+      This helper function will read standardized fiscal year end financials from the Intrinio fundamentals API
+      for each year in the supplied range, and normalize the results into simpler user friendly
+      dictionary, for example:
 
       {
-        2010: {... APIResponse ...},
-        2011: {... APIResponse ...},
+        'netcashfromcontinuingoperatingactivities': 77434000000.0,
+        'purchaseofplantpropertyandequipment': -13313000000
       }
+
+      results may also be filtered based on the tag_filter_list parameter, which may include
+      just the tags that should be returned.
+
+      Parameters
+      ----------
+      ticker : str
+        Ticker Symbol
+      statement_name : str
+        The name of the statement to read.
+      year_from : int
+        Start year of financial statement list
+      year_to : int
+        End year of the financial statement list 
+      tag_filter_list : list
+        List of data tags used to filter results. The name of each tag
+        must match an expected one from the Intrinio API. If "None", then all
+        tags will be returned.
+
+      Raises
+      -------
+      DataError in case of any error calling the intrio API
+
+      Returns
+      -------
+      A dictionary of tag=>value with the filtered results. For example:
+
+      {
+        'netcashfromcontinuingoperatingactivities': 77434000000.0,
+        'purchaseofplantpropertyandequipment': -13313000000
+      }
+
+      Note that the name of the tags are specific to the Intrinio API
+
     """
     # return value
     hist_statements = {}
@@ -259,25 +332,66 @@ def __read_historical_financial_statement__(ticker: str, statement_name: str, ye
     try:
         for i in range(year_from, year_to + 1):
             satement_name = ticker + "-" + \
-                statement_name + "-" + str(i) + "-Q3"
+                statement_name + "-" + str(i) + "-FY"
 
             statement = fundamentals_api.get_fundamental_standardized_financials(
                 satement_name)
 
-            hist_statements[i] = statement.standardized_financials
+            hist_statements[i] = __transform_financial_stmt__(
+                statement.standardized_financials, tag_filter_list)
 
-    except ApiException as e:
-        # todo rethrow a different exception
-        print("Exception when reading %s statement APIs: %s" %
-              (statement_name, e))
-        return {}
+    except ApiException as ae:
+        raise DataError(
+            "Error retrieving ('%s', %d - %d) -> '%s' from Intrinio Fundamentals API" % (ticker, year_from, year_to, statement_name), ae)
 
     return hist_statements
 
 
-def __read_financial_metric__(ticker: str, year: int, tag: str):
+def __read_financial_metrics__(ticker: str, start_year: int, end_year: int, tag: str):
+    """
+      Helper function that will read the Intrinio company API for the supplied date range
+      and convert the resulting list into a more friendly dictionary.
 
-    (start_date, end_date) = util.get_fiscal_year_period(year, 0)
+      Specifically a result like this
+
+      [
+        {
+          'date': datetime.date(2010, 1, 1),
+          'value': 123
+        },
+      ]
+
+      into this:
+
+      [{
+        2010: 123,
+      }]
+
+      Parameters
+      ----------
+      ticker : str
+        Ticker symbol. E.g. 'AAPL'
+      start_year : int
+        Start year of the metric data
+      end_year : int
+        End year of the metric data
+      tag : the metric name to retrieve
+
+
+      Returns
+      -------
+      A dictionary of year=>value with the filtered results. For example:
+
+      {
+        2010: 123,
+        2012: 234,
+        2013: 345,
+        2014: 456,
+      }
+    """
+    (start_date, x) = util.get_fiscal_year_period(start_year, 0)
+    (x, end_date) = util.get_fiscal_year_period(end_year, 0)
+
     frequency = 'yearly'
 
     try:
@@ -285,19 +399,24 @@ def __read_financial_metric__(ticker: str, year: int, tag: str):
             ticker, tag, frequency=frequency, start_date=start_date, end_date=end_date)
     except ApiException as ae:
         raise DataError(
-            "Error retrieving ('%s', %d) -> '%s' from Intrinion API" % (ticker, year, tag), ae)
+            "Error retrieving ('%s', %d - %d) -> '%s' from Intrinio Company API" % (ticker, start_year, end_year, tag), ae)
     except Exception as e:
         raise ValidationError(
-            "Error parsing ('%s', %d) -> '%s' from Intrinion API" % (ticker, year, tag), e)
+            "Error parsing ('%s', %d - %d) -> '%s' from Intrinio Company API" % (ticker, start_year, end_year, tag), e)
 
     if len(api_response.historical_data) == 0:
-        raise DataError("No Data returned for ('%s', %d) -> '%s' from Intrinion API" % (ticker, year, tag), None)
+        raise DataError("No Data returned for ('%s', %d - %d) -> '%s' from Intrinio Company API" %
+                        (ticker, start_year, end_year, tag), None)
 
-    return api_response.historical_data[0].value
+    historical_data = api_response.historical_data
+    converted_response = {}
+
+    for datapoint in historical_data:
+        converted_response[datapoint.date.year] = datapoint.value
+
+    return converted_response
 
 
-def __read_current_financial_metric__(ticker: str, tag: str):
-    try:
-        return data_point_api.get_data_point_number(ticker, tag)
-    except ApiException as e:
-        raise
+def __read_financial_metric__(ticker: str, year: int, tag: str):
+    metrics = __read_financial_metrics__(ticker, year, year, tag)
+    return metrics[year]

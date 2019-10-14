@@ -56,3 +56,14 @@ python valuate_security.py -ticker aapl 2018
 You may run all unit tests using this command:
 
 ```python run_tests.py```
+
+## Measuring code coverage
+You may measure code coverage by installing the coverage module
+
+```
+pip install coverage
+coverage run --omit *venv*.py run_tests.py
+coverage report
+```
+
+Alternatively you may replace ```coverage report``` with ```coverage html```

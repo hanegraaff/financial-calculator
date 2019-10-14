@@ -25,3 +25,24 @@ class TestFinancialIntrinioData(unittest.TestCase):
 
         with self.assertRaises(ValidationError):
             intrinio_data.get_diluted_eps('AAPL', 0)
+
+    '''
+        Financial statement tests
+    '''
+    def test_historical_cashflow_stmt_with_api_exception(self):
+        with patch.object(intrinio_data.fundamentals_api, 'get_fundamental_standardized_financials',
+                          side_effect=ApiException("Not Found")):
+            with self.assertRaises(DataError):
+                intrinio_data.get_historical_cashflow_stmt('NON-EXISTENT-TICKER', 2018, 2018, None) 
+
+    def test_historical_income_stmt_with_api_exception(self):
+        with patch.object(intrinio_data.fundamentals_api, 'get_fundamental_standardized_financials',
+                          side_effect=ApiException("Not Found")):
+            with self.assertRaises(DataError):
+                intrinio_data.get_historical_income_stmt('NON-EXISTENT-TICKER', 2018, 2018, None) 
+
+    def test_historical_balacesheet_stmt_with_api_exception(self):
+        with patch.object(intrinio_data.fundamentals_api, 'get_fundamental_standardized_financials',
+                          side_effect=ApiException("Not Found")):
+            with self.assertRaises(DataError):
+                intrinio_data.get_historical_balance_sheet('NON-EXISTENT-TICKER', 2018, 2018, None) 
