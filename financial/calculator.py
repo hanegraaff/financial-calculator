@@ -14,7 +14,7 @@ log = logging.getLogger()
 
 def calc_dcf_price(ticker, year):
     """
-        Computes a rough DCF calculation based on the "Jimmy" method, which
+        Computes a rough DCF calculation based on a variation of         the "Jimmy" method, which
         is based this video:
 
         https://www.youtube.com/watch?v=fd_emLLzJnk&t=500s
@@ -31,8 +31,13 @@ def calc_dcf_price(ticker, year):
            analyst forecast. Here we use the historical average.
         5) Determine historical profit margin (net margin) by dividing net income
            by revenue. Ideally the profit margin shoul be fairly consistent.
-        6) Forecast net income by multipling revenue by margin
+        6) Forecast net income by multipling revenue by profit margin
         7) Forecast FCFE by multiplying net income by the number determined in step 3.
+        8) Determine cost of capital. Currently hardcoded.
+        9) Apply the DCF forumla using free cash flow forecasts, growth estimate and
+           discount rate (cost of capital)
+        10) Deternine shares outstanding
+        11) Determine value per share by diving DCF value with shares outstanding
 
 
 
@@ -48,8 +53,18 @@ def calc_dcf_price(ticker, year):
         the Price per share based on the calculation
     """
 
+    #    
+    # Hardcoded parameters
+    #
+    forecast_years = 4
+
     start_year = year - 4
     end_year = year
+
+    discount_rate = 0.08
+
+    forecast_start_year = end_year + 1
+    forecast_end_year = forecast_start_year + forecast_years
 
     def __calc_fcfe_ni_ratio__(hist_fcfe : dict, hist_net_income : dict):
         """
@@ -64,11 +79,95 @@ def calc_dcf_price(ticker, year):
 
         log.debug("Historical fcfe/ni ratio: %s" % util.format_dict(fcfe_ni_ratio))
         return sorted(fcfe_ni_ratio.values())[0]
+
+    def __calc_profit_margin__(hist_net_income : dict, hist_revenue : dict):
+        """
+            calculates the ratio of fcfe to net income ratio and return
+            the most conservative (smallest) value
+        """
+
+        profit_margin = {}
+
+        for i in range(start_year, end_year + 1):
+            profit_margin[i] = hist_net_income[i] / hist_revenue[i]
+
+        log.debug("Historical profit margin: %s" % util.format_dict(profit_margin))
+        
+        return sum(profit_margin.values()) / len(profit_margin.keys())
     
-    def __forecast_revenue_growth__(hist_revenue :  dict):
-        return 0
+    def __calc_revenue_growth_rate__(hist_revenue :  dict):
+        '''
+            Calculates the revenue growth rate by comuting the average.
+            Returns a float with the estimate growth rate
+        '''
+
+        revenue_forecast = {}
+
+        for year in range(start_year, end_year):
+            revenue_forecast[year + 1] = hist_revenue[year + 1]/hist_revenue[year]
+            log.debug("In %d, the revenue growth was %3.6f" % (year + 1, revenue_forecast[year + 1]))
+
+        return sum(revenue_forecast.values())  / len(revenue_forecast.keys())
+
+    def __forecast_revenue__(latest_revenue : int, growth_rate : float):
+        '''
+            Forecasts the revenue given the latest value and a growth rate.
+            Returns a dictionary with forecast values for the forecasting range
+            For example:
+            {
+                2020: 100000000
+                2021: 110000000
+                2022: 120000000
+                ...
+            }
+        '''
+
+        revenue_forecast = {}
+
+        next_forecast = latest_revenue * growth_rate
+
+        for forecast_year in range(forecast_start_year, forecast_end_year + 1):
+            revenue_forecast[forecast_year] = next_forecast
+            next_forecast = next_forecast * growth_rate
+
+        return revenue_forecast
+
+    def __forecast_net_income__(revenue_forecast : dict, profit_margin : float):
+        '''
+            Returns a dictionary of net income forecasts based on the supplied revenues 
+            forecasts and profit margin
+
+            net_income_forecast[year] = revenue_forecast[year] * profit_margin
+        '''
+        net_income_forecast = {}
+        for year in range(forecast_start_year, forecast_end_year):
+            net_income_forecast[year] = revenue_forecast[year] * profit_margin
+
+        return net_income_forecast
+
+    def __forecast_fcfe__(net_income_forecast, fcfe_ni_ratio):
+        '''
+            Returns a dictionary of fcfe forecasts based on the supplied net margin forecasts
+            and multiplier
+
+            fcfe_forecast[year] = net_income_forecast[year] * fcfe_ni_ratio
+        '''
+        fcfe_forecast = {}
+        for year in range(forecast_start_year, forecast_end_year):
+            fcfe_forecast[year] = net_income_forecast[year] * fcfe_ni_ratio
+
+        return fcfe_forecast
+
+
     
-    '''log.info("Computing DCF for: %s, %d" % (ticker, year))
+    log.info("Computing DCF for: %s, %d" % (ticker, year))
+
+    #
+    # Gather all necessary data
+    #
+    logging.info("")
+    logging.info("Reading Financial Statement Data...")
+    logging.info("")
 
     cashflow_statements = intrinio_data.get_historical_cashflow_stmt(
         ticker, start_year, end_year, None)
@@ -82,17 +181,50 @@ def calc_dcf_price(ticker, year):
     historical_net_income = get_historical_net_income(cashflow_statements)
     logging.debug("Historical Net Income: %s" % util.format_dict(historical_net_income))
 
-    # get fcfe_ni_ratio
-    fcfe_ni_ratio = __calc_fcfe_ni_ratio__(historical_fcfe, historical_net_income)
-    logging.debug("chosen fcfe/ni ratio: %3.6f" % fcfe_ni_ratio)
-
     # get historical revenue growth and determine growth rate
     historical_revenue = intrinio_data.get_historical_revenue(
         ticker, start_year, end_year)
+    
+    logging.debug("Historical Revenue: %s" % util.format_dict(historical_revenue))
+    
+    # Get Shares outstanding
+    outstanding_shares = intrinio_data.get_outstanding_shares(ticker, year)
+    logging.info("Outstanding Shares: %d" % outstanding_shares)
 
-    logging.debug("Total Revenue: %s" % util.format_dict(historical_revenue))
-    revenue_growth = __forecast_revenue_growth__(historical_revenue)
-    logging.info("Revenue Growth: %3.6f" % revenue_growth)'''
+
+    #
+    # Calculate fcfe_ni_ratio, revenue growth and profit margin
+    # These will be used to estimate the cash flow
+    #
+
+    logging.info("")
+    logging.info("Estimating Rate of Growth")
+    logging.info("")
+
+    # get fcfe_ni_ratio
+    fcfe_ni_ratio = __calc_fcfe_ni_ratio__(historical_fcfe, historical_net_income)
+    logging.info("Calculated (smallest) fcfe/ni ratio: %3.8f" % fcfe_ni_ratio)
+
+    revenue_growth = __calc_revenue_growth_rate__(historical_revenue)
+    logging.info("Calculated (average) revenue growth: %3.8f" % revenue_growth)
+
+    # calculate histotical profit margin
+    profit_margin = __calc_profit_margin__(historical_net_income, historical_revenue)
+    logging.info("Calculated (average) profit margin: %3.8f" % profit_margin)
+
+    logging.info("")
+    logging.info("Forecasting Cash Flows")
+    logging.info("")
+
+    revenue_forecast = __forecast_revenue__(historical_revenue[end_year], revenue_growth)
+    logging.debug("Revenue Forecast: %s", util.format_dict(revenue_forecast))
+
+    net_income_forecast = __forecast_net_income__(revenue_forecast, profit_margin)
+    logging.debug("Net Income forecast: %s", util.format_dict(net_income_forecast))
+
+    fcfe_forecast = __forecast_fcfe__(net_income_forecast, fcfe_ni_ratio)
+    logging.debug("Free CashFlow forecast: %s", util.format_dict(fcfe_forecast))
+
 
 
 def calc_graham_number(ticker : str, year : int):

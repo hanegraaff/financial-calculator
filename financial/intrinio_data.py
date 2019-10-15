@@ -144,6 +144,35 @@ def get_bookvalue_per_share(ticker: str, year: int):
     return __read_financial_metric__(ticker, year, 'bookvaluepershare')
 
 
+def get_outstanding_shares(ticker : str, year: int):
+    '''
+      Returns the outstanding shares using this formula:
+       
+      outstanding shares = common shares + preferred shares + treasury shares
+
+      Parameters
+      ----------
+      ticker : str
+        Ticker Symbol
+      year : int
+        Current or hisorical year to look up
+
+      Returns
+      -----------
+      A number representing the outstanding shares
+    '''
+
+    common_shares = __read_financial_metric__(ticker, year, 'commonequity')
+    preferred_shares = 0#__read_financial_metric__(ticker, year, 'totalpreferredequity')
+    treasury_shares = 0#__read_financial_metric__(ticker, year, 'treasurystock')
+
+    logging.debug("Common Shares: %d" % common_shares)
+    logging.debug("Preferred Shares: %d" % preferred_shares)
+    logging.debug("Treasury Shares: %d" % preferred_shares)
+
+    return common_shares + preferred_shares + treasury_shares
+
+
 def get_historical_income_stmt(ticker: str, year_from: int,
                                year_to: int, tag_filter_list: list):
     """
