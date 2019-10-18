@@ -11,7 +11,7 @@ from exception.exceptions import BaseError
 # Main script
 #
 
-logging.basicConfig(level=logging.DEBUG, format='[%(levelname)s] - %(message)s')
+logging.basicConfig(level=logging.INFO, format='[%(levelname)s] - %(message)s')
 
 description = """ This financial calculator will generate various metrics
                   given a single ticker symbol or a file and a year.
@@ -49,7 +49,9 @@ log.debug("Ticker: %s" % ticker)
 log.debug("Ticker File: %s" % ticker_file)
 log.debug("Year: %d" % year)
 
-calculator.calc_dcf_price(ticker, year)
+price = calculator.calc_dcf_price(ticker, year)
+
+log.info("Calculated Price: %.6f" % price)
 
 log.info("Done")
 

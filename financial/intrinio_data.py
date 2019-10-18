@@ -18,15 +18,51 @@ API_KEY = os.environ['INTRINIO_API_KEY']
 intrinio_sdk.ApiClient().configuration.api_key['api_key'] = API_KEY
 
 fundamentals_api = intrinio_sdk.FundamentalsApi()
-data_point_api = intrinio_sdk.DataPointApi()
 company_api = intrinio_sdk.CompanyApi()
+security_api = intrinio_sdk.SecurityApi()
 
+
+def get_daily_stock_prices(ticker : str, start_date : object, end_date : object):
+      """
+        Returns a list of historical daily stock prices given a ticker symbol and
+        a range of dates.
+
+        Currently only returns one page of 100 results
+
+        Parameters
+        ----------
+        ticker : str
+          Ticker Symbol
+        start_date : object
+          The beginning price date as python date object
+        end_date : object
+          The end price date as python date object
+        
+        Raises
+        -----------
+        CalculationError in case of invalid paramters
+
+        Returns
+        -----------
+        a dictionary of date->price like this
+        {
+          datetime(2019, 10, 1): 100,
+          datetime(2019, 10, 2): 101,
+          datetime(2019, 10, 3): 102,
+          datetime(2019, 10, 4): 103,
+        }
+      """
+      '''try:
+        api_response = security_api.get_security_intraday_prices(ticker, start_date=start_date, start_time=start_time, end_date=end_date, end_time=end_time, page_size=100)
+      except ApiException as e:
+        print("Exception when calling SecurityApi->get_security_intraday_prices: %s\r\n" % e)
+      '''
+      pass 
 
 def get_historical_revenue(ticker: str, year_from: int, year_to: int):
     '''
       Returns a dictionary of year->"total revenue" for the supplied ticker and 
       range of years.
-
 
       Parameters
       ----------
@@ -144,11 +180,19 @@ def get_bookvalue_per_share(ticker: str, year: int):
     return __read_financial_metric__(ticker, year, 'bookvaluepershare')
 
 
-def get_outstanding_shares(ticker : str, year: int):
+def get_outstanding_diluted_shares(ticker : str, year: int):
     '''
-      Returns the outstanding shares using this formula:
+      Returns the weighted average of diluted outstanding shares.
+      
+      Here is the intrinio description
+
+      The weighted average of diluted outstanding shares is a calculation that 
+      incorporates any changes in the amount of outstanding shares over a reporting period. 
+      Diluted shares outstanding includes all shares that would be created upon conversion 
+      into shares. Convertible securities are all outstanding convertible preferred shares, 
+      convertible debentures, stock options (primarily employee-based) and warrants. 
+      Adjusted for stock splits.
        
-      outstanding shares = common shares + preferred shares + treasury shares
 
       Parameters
       ----------
@@ -162,15 +206,9 @@ def get_outstanding_shares(ticker : str, year: int):
       A number representing the outstanding shares
     '''
 
-    common_shares = __read_financial_metric__(ticker, year, 'commonequity')
-    preferred_shares = 0#__read_financial_metric__(ticker, year, 'totalpreferredequity')
-    treasury_shares = 0#__read_financial_metric__(ticker, year, 'treasurystock')
+    weighted_avg_diluted_shares = __read_financial_metric__(ticker, year, 'weightedavedilutedsharesos')
 
-    logging.debug("Common Shares: %d" % common_shares)
-    logging.debug("Preferred Shares: %d" % preferred_shares)
-    logging.debug("Treasury Shares: %d" % preferred_shares)
-
-    return common_shares + preferred_shares + treasury_shares
+    return weighted_avg_diluted_shares
 
 
 def get_historical_income_stmt(ticker: str, year_from: int,

@@ -12,9 +12,57 @@ from log import util
 
 log = logging.getLogger()
 
+
+def calc_enterprise_value(fcfe_forecast : dict, long_term_growth_rate : float, discount_rate : float):
+    """
+        Calculates the enterprise value by performing a Discounted Cash Flow calculation
+        using a dictionary of forecasted cash flows a pair of growth rates and a discount rate
+
+    """
+    def validate_parameters():
+        if (fcfe_forecast == None or len(fcfe_forecast) == 0
+            or long_term_growth_rate <= 0 
+            or discount_rate <= 0):
+            raise CalculationError("Could not perform discounted cash flow because the supplied parameters are invalid", None)
+        
+        if (long_term_growth_rate >= discount_rate):
+            raise CalculationError("Could not perform discounted cash flow because long test growth rate exceeds discount rate", None)
+
+    discounted_cashflows = {}
+    exp = 1
+
+    # todo, see if we can avoid this sort.
+    years = sorted(fcfe_forecast.keys())
+    start_year = years[0]
+    end_year = years[len(years) - 1]
+
+    logging.debug("Calculating Enterprise Value using DCF Formula")
+    logging.debug("Discount Rate: %3.6f" % discount_rate)
+    logging.debug("Long Term Growth rate: %3.6f" % long_term_growth_rate)
+
+    validate_parameters()
+
+    # compute short term enterprise value
+    for year in range(start_year, end_year + 1):
+        discounted_cashflows[year] =  fcfe_forecast[year] / ((1 + discount_rate) ** exp)
+        exp += 1
+
+    short_term_ev = sum(discounted_cashflows.values())
+    logging.debug("Short Term EV: %.6f" % short_term_ev)
+    
+    terminal_value_start_fcf = discounted_cashflows[end_year]
+
+    terminal_value = terminal_value_start_fcf / (discount_rate - long_term_growth_rate)
+    logging.debug("Terminal Value: %.6f" % terminal_value)
+
+    return short_term_ev + terminal_value
+
+    
+
+
 def calc_dcf_price(ticker, year):
     """
-        Computes a rough DCF calculation based on a variation of         the "Jimmy" method, which
+        Computes a rough DCF calculation based on a variation of the "Jimmy" method, which
         is based this video:
 
         https://www.youtube.com/watch?v=fd_emLLzJnk&t=500s
@@ -35,11 +83,9 @@ def calc_dcf_price(ticker, year):
         7) Forecast FCFE by multiplying net income by the number determined in step 3.
         8) Determine cost of capital. Currently hardcoded.
         9) Apply the DCF forumla using free cash flow forecasts, growth estimate and
-           discount rate (cost of capital)
+           discount rates.
         10) Deternine shares outstanding
         11) Determine value per share by diving DCF value with shares outstanding
-
-
 
         Parameters
         ----------
@@ -61,7 +107,8 @@ def calc_dcf_price(ticker, year):
     start_year = year - 4
     end_year = year
 
-    discount_rate = 0.08
+    discount_rate = 0.0967
+    long_term_growth_rate = 0.025
 
     forecast_start_year = end_year + 1
     forecast_end_year = forecast_start_year + forecast_years
@@ -75,7 +122,7 @@ def calc_dcf_price(ticker, year):
         fcfe_ni_ratio = {}
 
         for i in range(start_year, end_year + 1):
-            fcfe_ni_ratio[i] = hist_fcfe[i] / hist_net_income[i]
+            fcfe_ni_ratio[i] = (hist_fcfe[i] / hist_net_income[i]) - 1
 
         log.debug("Historical fcfe/ni ratio: %s" % util.format_dict(fcfe_ni_ratio))
         return sorted(fcfe_ni_ratio.values())[0]
@@ -154,7 +201,7 @@ def calc_dcf_price(ticker, year):
         '''
         fcfe_forecast = {}
         for year in range(forecast_start_year, forecast_end_year):
-            fcfe_forecast[year] = net_income_forecast[year] * fcfe_ni_ratio
+            fcfe_forecast[year] = net_income_forecast[year] * (1  + fcfe_ni_ratio)
 
         return fcfe_forecast
 
@@ -188,7 +235,7 @@ def calc_dcf_price(ticker, year):
     logging.debug("Historical Revenue: %s" % util.format_dict(historical_revenue))
     
     # Get Shares outstanding
-    outstanding_shares = intrinio_data.get_outstanding_shares(ticker, year)
+    outstanding_shares = intrinio_data.get_outstanding_diluted_shares(ticker, year)
     logging.info("Outstanding Shares: %d" % outstanding_shares)
 
 
@@ -223,8 +270,17 @@ def calc_dcf_price(ticker, year):
     logging.debug("Net Income forecast: %s", util.format_dict(net_income_forecast))
 
     fcfe_forecast = __forecast_fcfe__(net_income_forecast, fcfe_ni_ratio)
-    logging.debug("Free CashFlow forecast: %s", util.format_dict(fcfe_forecast))
+    logging.info("Free CashFlow forecast: %s", util.format_dict(fcfe_forecast))
 
+    # Perform DCF Calculation and figure out enterprise value
+
+    enteprise_value = calc_enterprise_value(fcfe_forecast, long_term_growth_rate, discount_rate)
+    logging.debug("Enterprise Value: %.6f" % enteprise_value)
+
+    price_forecast = enteprise_value / outstanding_shares
+    logging.debug("Price Forecast: %.6f" % price_forecast)
+
+    return price_forecast
 
 
 def calc_graham_number(ticker : str, year : int):
