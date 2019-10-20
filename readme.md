@@ -8,9 +8,9 @@ perform its calculations. This data is provided by Intrinio, and you should sign
 ## The model
 The Discounted Cash Flow model is fairly simple to implement and requires only 3 imputs: A cashflow forecast for 4-5 years in the future, a long term growth rate and a discount rate. Although the formula is straight forward, getting the inputs right is not, and so the current implementation takes a very simplistic approach to this, namely:
 
-1) Discount rate is hardcoded, to 9.75% and can be changed programmatically
+1) Discount rate is hardcoded, to 9.75% and can be changed programmatically.
 2) The long term growth rate is is also hardcoded and set to the 10 year TBILL rate or 1.75%
-3) Cash flow forecast is based on a modified the "Jimmy" Method (https://www.youtube.com/watch?v=fd_emLLzJnk&t=500s), but it's essentially based on past history.
+3) Cash flow forecast is based on a modified version of the "Jimmy" Method (https://www.youtube.com/watch?v=fd_emLLzJnk&t=500s), but it's essentially based on past history.
 
 Over time, additional more sophisticated models will be made available.
 
