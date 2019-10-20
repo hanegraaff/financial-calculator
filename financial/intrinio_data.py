@@ -22,7 +22,7 @@ company_api = intrinio_sdk.CompanyApi()
 security_api = intrinio_sdk.SecurityApi()
 
 
-def get_daily_stock_prices(ticker : str, start_date : object, end_date : object):
+def get_daily_stock_close_prices(ticker : str, start_date : object, end_date : object):
       """
         Returns a list of historical daily stock prices given a ticker symbol and
         a range of dates.
@@ -46,18 +46,38 @@ def get_daily_stock_prices(ticker : str, start_date : object, end_date : object)
         -----------
         a dictionary of date->price like this
         {
-          datetime(2019, 10, 1): 100,
-          datetime(2019, 10, 2): 101,
-          datetime(2019, 10, 3): 102,
-          datetime(2019, 10, 4): 103,
+          '2019-10-01': 100,
+          '2019-10-02': 101,
+          '2019-10-03': 102,
+          '2019-10-04': 103,
         }
       """
-      '''try:
-        api_response = security_api.get_security_intraday_prices(ticker, start_date=start_date, start_time=start_time, end_date=end_date, end_time=end_time, page_size=100)
-      except ApiException as e:
-        print("Exception when calling SecurityApi->get_security_intraday_prices: %s\r\n" % e)
-      '''
-      pass 
+
+      start_date_str = util.date_to_string(start_date)
+      end_date_str = util.date_to_string(end_date)
+
+      price_dict = {}
+
+      try:
+        api_response = security_api.get_security_stock_prices(ticker, start_date=start_date_str, end_date=end_date_str, frequency='daily', page_size=100)
+      except ApiException as ae:
+        raise DataError("API Error while reading price data from Intrinio Security API: ('%s', %s - %s)" %
+                        (ticker, start_date_str, end_date_str), ae)
+      except Exception as e:
+        raise ValidationError("Unknown Error while reading price data from Intrinio Security API: ('%s', %s - %s)" %
+                        (ticker, start_date_str, end_date_str), e)
+
+      price_list = api_response.stock_prices
+
+      if len(price_list) == 0:
+        raise DataError("No prices returned from from Intrinio Security API: ('%s', %s - %s)" %
+                    (ticker, start_date_str, end_date_str), None)
+
+      for price in price_list:  
+        price_dict[util.date_to_string(price.date)] = price.close
+
+      return price_dict
+
 
 def get_historical_revenue(ticker: str, year_from: int, year_to: int):
     '''
@@ -281,7 +301,7 @@ def get_historical_balance_sheet(ticker: str, year_from: int,
 def get_historical_cashflow_stmt(ticker: str, year_from: int,
                                  year_to: int, tag_filter_list: list):
     """
-      returns a partial or complete seto of cashflow statements given
+      returns a partial or complete set of cashflow statements given
       a ticker symbol, year from, year to and a list of tag filters
       used to narrow the results.
 

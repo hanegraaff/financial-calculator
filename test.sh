@@ -1,4 +1,4 @@
 #!/bin/sh
-coverage run --omit *venv*.py  run_tests.py
+coverage run --omit *venv*.py,*test/test* run_tests.py
 coverage report
 

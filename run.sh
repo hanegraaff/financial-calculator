@@ -1,3 +1,3 @@
 #!/bin/sh
-python valuate_security.py -ticker aapl 2018
+python valuate_security.py -ticker-file ticker-list.txt 2018
 

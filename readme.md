@@ -1,15 +1,20 @@
 # Overview
 
-A financial calculator able to compute various metrics given a ticker symbol and a year.
-As of this version it can only produce a Graham Number
+A financial calculator capable of determining the instrinsic value of a company by performing a discounted cashflow analysis.
+
+This calculator requires access to financial statements and stock prices to 
+perform its calculations. This data is provided by Intrinio, and you should get access to key before using this software.
 
 ## Prerequisites
+
+### API Keys
 An API Key for the Intrinio (https://www.intrinio.com) with access to the "US Fundamentals and Stock Prices" feeds
 
 the API should be saved to the environment like so:
 
 ```export INTRINIO_API_KEY=[your API key]```
 
+### Setting up your virtual environment
 You may also run this in a virtual environment
 
 ```
@@ -52,18 +57,43 @@ python valuate_security.py -ticker-file ticker-list.txt 2018
 python valuate_security.py -ticker aapl 2018
 ```
 
+## Output
+
+```
+> python valuate_security.py aapl 2018
+
+[INFO] - Tiker: AAPL, Intrinsic Price: 298.168730, Current Price: 236.410000
+```
+
 ## Unit Tests
 You may run all unit tests using this command:
 
-```python run_tests.py```
+```./test.sh```
 
-## Measuring code coverage
-You may measure code coverage by installing the coverage module
+This command will execute all unit tests and run the coverage report (using coverage.py)
 
 ```
-pip install coverage
-coverage run --omit *venv*.py run_tests.py
-coverage report
-```
+>./test.sh
+.........................
+----------------------------------------------------------------------
+Ran 25 tests in 0.241s
 
-Alternatively you may replace ```coverage report``` with ```coverage html```
+OK
+Name                         Stmts   Miss  Cover
+------------------------------------------------
+dcf_models/__init__.py           0      0   100%
+dcf_models/base_model.py        12      4    67%
+dcf_models/jimmy_model.py      106     87    18%
+exception/exceptions.py         21      3    86%
+financial/__init__.py            0      0   100%
+financial/calculator.py         63     25    60%
+financial/intrinio_data.py      83     29    65%
+financial/util.py               13      0   100%
+log/__init__.py                  0      0   100%
+log/util.py                      3      1    67%
+run_tests.py                     8      0   100%
+test/__init__.py                 0      0   100%
+------------------------------------------------
+TOTAL                          309    149    52%
+
+```
