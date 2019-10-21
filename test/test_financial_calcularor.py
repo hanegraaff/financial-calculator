@@ -103,3 +103,39 @@ class TestFinancialCalculator(unittest.TestCase):
         with self.assertRaises(DataError):
             calculator.get_historical_net_income(cashflow_statement)
 
+    '''
+        DCF Calculation Tests
+    '''
+
+    def test_dcf_no_fcf(self):
+        with self.assertRaises(CalculationError):
+            calculator.calc_enterprise_value(None, 0.03, 0.0975)
+
+    def test_dcf_zero_growthrate(self):
+        with self.assertRaises(CalculationError):
+            calculator.calc_enterprise_value('AAPS', 0, 0.0975)
+
+
+    def test_dcf_zero_discountrate(self):
+        with self.assertRaises(CalculationError):
+            calculator.calc_enterprise_value({2008: 100}, 0.03, 0)
+
+    def test_dcf_same_growth_discount(self):
+        with self.assertRaises(CalculationError):
+            #(100 / 2)^1 + (100/0)
+            calculator.calc_enterprise_value({2008: 100}, 1, 1)
+
+    def test_dcf_simple(self):
+        #100 / (2)^1 + (50/0.5) = 150
+        dcf_price = calculator.calc_enterprise_value({2008: 100}, 0.5, 1)
+        self.assertEquals(dcf_price, 150)
+
+    def test_dcf_simple(self):
+        #100 / (2)^1 + 50 / (2)^2 + (100/0.5) = 87.5
+        dcf_price = calculator.calc_enterprise_value({2008: 100, 2009: 100}, 0.5, 1)
+        self.assertEquals(dcf_price, 125)
+
+        
+
+    
+

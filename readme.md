@@ -6,7 +6,7 @@ This calculator requires access to financial statements and stock prices to
 perform its calculations. This data is provided by Intrinio, and you should sign up for an access to key before using this software. You may sign up for sandbox access which will give you data on roughly 30 securities.
 
 ## The model
-The Discounted Cash Flow model is fairly simple to implement and requires only 3 imputs: A cashflow forecast for 4-5 years in the future, a long term growth rate and a discount rate. Although the formula is straight forward, getting the inputs right is not, and so the current implementation takes a very simplistic approach to this, namely:
+The Discounted Cash Flow model is simple to implement and requires only 3 imputs: A cashflow forecast for 4-5 years in the future, a long term growth rate and a discount rate. Although the formula is straight forward, getting the inputs right is not, and so the current implementation takes a very simplistic approach to this.
 
 1) Discount rate is hardcoded, to 9.75% and can be changed programmatically.
 2) The long term growth rate is is also hardcoded and set to the 10 year TBILL rate or 1.75%
@@ -96,7 +96,7 @@ dcf_models/base_model.py        12      4    67%
 dcf_models/jimmy_model.py      106     87    18%
 exception/exceptions.py         21      3    86%
 financial/__init__.py            0      0   100%
-financial/calculator.py         63     25    60%
+financial/calculator.py         63      2    97%
 financial/intrinio_data.py      83     29    65%
 financial/util.py               13      0   100%
 log/__init__.py                  0      0   100%
@@ -104,6 +104,6 @@ log/util.py                      3      1    67%
 run_tests.py                     8      0   100%
 test/__init__.py                 0      0   100%
 ------------------------------------------------
-TOTAL                          309    149    52%
+TOTAL                          309    126    59%
 
 ```

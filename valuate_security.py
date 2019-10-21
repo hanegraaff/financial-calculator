@@ -18,15 +18,8 @@ from dcf_models.jimmy_model import JimmyDCFModel
 
 logging.basicConfig(level=logging.INFO, format='[%(levelname)s] - %(message)s')
 
-description = """ This financial calculator will generate various metrics
-                  given a single ticker symbol or a file and a year.
-            
-                  Currently only support Graham Number calculation.
-
-                  When processing metrics for multiple securities you may
-                  supply a text file containing a list of securities, one per line.
-                  
-                  Parameters must include either -ticker or -ticker-file parameter"""
+description = """ Performs a DCF Analisys of a stock and returns the intrinsic price
+              """
 
 
 

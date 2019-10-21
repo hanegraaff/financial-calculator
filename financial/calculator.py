@@ -36,6 +36,8 @@ def calc_enterprise_value(fcfe_forecast : dict, long_term_growth_rate : float, d
     discounted_cashflows = {}
     exp = 1
 
+    validate_parameters()
+
     # todo, see if we can avoid this sort.
     years = sorted(fcfe_forecast.keys())
     start_year = years[0]
@@ -44,8 +46,6 @@ def calc_enterprise_value(fcfe_forecast : dict, long_term_growth_rate : float, d
     logging.debug("Calculating Enterprise Value using DCF Formula")
     logging.debug("Discount Rate: %3.6f" % discount_rate)
     logging.debug("Long Term Growth rate: %3.6f" % long_term_growth_rate)
-
-    validate_parameters()
 
     # compute short term enterprise value
     for year in range(start_year, end_year + 1):
