@@ -19,8 +19,11 @@ logging.basicConfig(level=logging.INFO, format='[%(levelname)s] - %(message)s')
 
 description = """ Performs a DCF analisys of a stock and returns the intrinsic price.
 
-                  The parameters are ticker symbol (or file containing one security per line) 
-                  and a year represending the most recent year end reports.
+                  The parameters are a ticker symbol (or file containing one symbol per line)
+                     and a year represending the most recent available year end reports. The year
+                     also represents the date of the intrinsic price. So for example, if the
+                     supplied parameters are "AAPL" and "2018", then the output will be the
+                     price for AAPL during Q4 2018.
               """
 
 

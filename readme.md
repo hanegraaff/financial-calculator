@@ -45,8 +45,11 @@ usage: valuate_security.py [-h] [-ticker TICKER] [-ticker-file TICKER_FILE]
                            year
 
 Performs a DCF analisys of a stock and returns the intrinsic price. The
-parameters are ticker symbol (or file containing one security per line) and a
-year represending the most recent year end reports.
+parameters are a ticker symbol (or file containing one symbol per line) and
+a year represending the most recent available year end reports. The year also
+represents the date of the intrinsic price. So for example, if the supplied
+parameters are "AAPL" and "2018", then the output will be the price for AAPL
+during Q4 2018.
 
 positional arguments:
   year                  Year of the most recent year end financial statements
@@ -106,3 +109,9 @@ test/__init__.py                 0      0   100%
 TOTAL                          309    126    59%
 
 ```
+
+## Future enhancements
+1) Perform TTM estimates when a year end financial report does not yet exist.
+2) Calculate Cost of Capital using CAPM forumla
+3) Throw exception when a security is not a good candidate for this model instead of proceeding with the calculation
+4) Better forecasting. Currently it's just based on historical performance.
