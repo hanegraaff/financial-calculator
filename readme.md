@@ -86,9 +86,9 @@ This command will execute all unit tests and run the coverage report (using cove
 
 ```
 >./test.sh
-.........................
+.......................
 ----------------------------------------------------------------------
-Ran 25 tests in 0.241s
+Ran 30 tests in 0.363s
 
 OK
 Name                         Stmts   Miss  Cover
