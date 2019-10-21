@@ -1,6 +1,5 @@
 """valuate_security.py
 
-
 """
 import argparse
 import datetime
@@ -18,7 +17,10 @@ from dcf_models.jimmy_model import JimmyDCFModel
 
 logging.basicConfig(level=logging.INFO, format='[%(levelname)s] - %(message)s')
 
-description = """ Performs a DCF Analisys of a stock and returns the intrinsic price
+description = """ Performs a DCF analisys of a stock and returns the intrinsic price.
+
+                  The parameters are ticker symbol (or file containing one security per line) 
+                  and a year represending the most recent year end reports.
               """
 
 
@@ -26,7 +28,7 @@ description = """ Performs a DCF Analisys of a stock and returns the intrinsic p
 parser = argparse.ArgumentParser(description=description)
 parser.add_argument("-ticker", help="Ticker Symbol", type=str)
 parser.add_argument("-ticker-file", help="Ticker Symbol file", type=str)
-parser.add_argument("year", help="Year", type=int)
+parser.add_argument("year", help="Year of the most recent year end financial statements", type=int)
 
 log = logging.getLogger()
 
