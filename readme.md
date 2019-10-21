@@ -111,7 +111,8 @@ TOTAL                          309    126    59%
 ```
 
 ## Future enhancements
-1) Perform TTM estimates when a year end financial report does not yet exist.
-2) Calculate Cost of Capital using CAPM forumla
-3) Throw exception when a security is not a good candidate for this model instead of proceeding with the calculation
-4) Better forecasting. Currently it's just based on historical performance.
+1) Better test coverage. 
+2) Perform TTM estimates when a year end financial report does not yet exist.
+3) Calculate Cost of Capital using CAPM forumla.
+4) Throw exception when a security is not a good candidate for this model instead of proceeding with the calculation.
+5) Better forecasting. Currently it's just based on historical performance.
