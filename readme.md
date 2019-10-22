@@ -86,28 +86,22 @@ This command will execute all unit tests and run the coverage report (using cove
 
 ```
 >./test.sh
-.......................
 ----------------------------------------------------------------------
-Ran 30 tests in 0.363s
+Ran 31 tests in 0.248s
 
 OK
 Name                         Stmts   Miss  Cover
 ------------------------------------------------
-dcf_models/__init__.py           0      0   100%
-dcf_models/base_model.py        12      4    67%
-dcf_models/jimmy_model.py      106     87    18%
+dcf_models/base_model.py        12      2    83%
+dcf_models/jimmy_model.py      108     12    89%
 exception/exceptions.py         21      3    86%
-financial/__init__.py            0      0   100%
 financial/calculator.py         63      2    97%
 financial/intrinio_data.py      83     29    65%
 financial/util.py               13      0   100%
-log/__init__.py                  0      0   100%
-log/util.py                      3      1    67%
+log/util.py                      3      0   100%
 run_tests.py                     8      0   100%
-test/__init__.py                 0      0   100%
 ------------------------------------------------
-TOTAL                          309    126    59%
-
+TOTAL                          311     48    85%
 ```
 
 ## Future enhancements
