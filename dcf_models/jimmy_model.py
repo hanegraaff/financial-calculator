@@ -8,7 +8,7 @@ import math
 import datetime
 import statistics
 from datetime import timedelta
-from exception.exceptions import CalculationError, DataError
+from exception.exceptions import ValidationError, CalculationError, DataError
 import logging
 from log import util
 
@@ -54,6 +54,9 @@ class JimmyDCFModel(BaseDCFModel):
 
         self.ticker = ticker
         self.year = year
+
+        if (ticker == None or len(ticker) == 0):
+            raise ValidationError("Invalid Ticker Symbol", None)
 
         self.forecast_years = 4
         self.discount_rate = 0.086

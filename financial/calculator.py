@@ -159,7 +159,7 @@ def get_historical_simple_fcfe(cashflow_statements : dict):
     fcf_dict = {}
 
     if cashflow_statements == None:
-        raise DataError("Count not compute historical fcfe, because of invalid input", None)
+        raise DataError("Could not compute historical fcfe, because of invalid input", None)
 
     try:
         for year, cashflow in sorted(cashflow_statements.items()):
@@ -167,6 +167,6 @@ def get_historical_simple_fcfe(cashflow_statements : dict):
                 cashflow['purchaseofplantpropertyandequipment']
             fcf_dict[year] = fcf
     except KeyError as ke:
-        raise DataError("Count not compute historical fcfe, because of missing information in the cash flow statement", ke)
+        raise DataError("Could not compute historical fcfe, because of missing information in the cash flow statement", ke)
 
     return fcf_dict

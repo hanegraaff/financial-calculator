@@ -67,8 +67,9 @@ else:
 for ticker in ticker_list:
   try:
 
-    price_dict = intrinio_data.get_daily_stock_close_prices(ticker, current, current)
-    yesterday_price = price_dict[list(price_dict.keys())[0]]
+    #price_dict = intrinio_data.get_daily_stock_close_prices(ticker, current, current)
+    #yesterday_price = price_dict[list(price_dict.keys())[0]]
+    yesterday_price = 123.123
     dcf_model = JimmyDCFModel(ticker, year)
     dcf_price = dcf_model.calculate_dcf_price()
     log.info("Tiker: %s, Intrinsic Price: %.6f, Current Price: %.6f" % (ticker, dcf_price, yesterday_price))
