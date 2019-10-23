@@ -133,7 +133,7 @@ class TestFinancialCalculator(unittest.TestCase):
     def test_dcf_simple(self):
         #100 / (2)^1 + 50 / (2)^2 + (100/0.5) = 87.5
         dcf_price = calculator.calc_enterprise_value({2008: 100, 2009: 100}, 0.5, 1)
-        self.assertEquals(dcf_price, 125)
+        self.assertEqual(dcf_price, 125)
 
         
 

@@ -3,6 +3,7 @@ from exception.exceptions import ValidationError, CalculationError
 from dcf_models.jimmy_model import JimmyDCFModel
 from financial import intrinio_data
 from unittest.mock import patch
+from log import util
 
 
 class TestJimmyModel(unittest.TestCase):
@@ -59,4 +60,5 @@ class TestJimmyModel(unittest.TestCase):
 
                     dcf_model = JimmyDCFModel('aapl', 2018)
                     price = dcf_model.calculate_dcf_price()
+                    print(util.format_dict(dcf_model.get_itermediate_results()))
                     self.assertEqual(price, 5.559189179051494)

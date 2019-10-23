@@ -15,7 +15,7 @@ from dcf_models.jimmy_model import JimmyDCFModel
 # Main script
 #
 
-logging.basicConfig(level=logging.INFO, format='[%(levelname)s] - %(message)s')
+logging.basicConfig(level=logging.DEBUG, format='[%(levelname)s] - %(message)s')
 
 description = """ Performs a DCF analisys of a stock and returns the intrinsic price.
 
@@ -50,7 +50,7 @@ log.debug("Ticker: %s" % ticker)
 log.debug("Ticker File: %s" % ticker_file)
 log.debug("Year: %d" % year)
 
-current = datetime.datetime.now() - timedelta(days=2)
+current = datetime.datetime.now() - timedelta(days=1)
 
 ticker_list = []
 
@@ -67,9 +67,8 @@ else:
 for ticker in ticker_list:
   try:
 
-    #price_dict = intrinio_data.get_daily_stock_close_prices(ticker, current, current)
-    #yesterday_price = price_dict[list(price_dict.keys())[0]]
-    yesterday_price = 123.123
+    price_dict = intrinio_data.get_daily_stock_close_prices(ticker, current, current)
+    yesterday_price = price_dict[list(price_dict.keys())[0]]
     dcf_model = JimmyDCFModel(ticker, year)
     dcf_price = dcf_model.calculate_dcf_price()
     log.info("Tiker: %s, Intrinsic Price: %.6f, Current Price: %.6f" % (ticker, dcf_price, yesterday_price))

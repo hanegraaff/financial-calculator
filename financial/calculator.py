@@ -43,22 +43,16 @@ def calc_enterprise_value(fcfe_forecast : dict, long_term_growth_rate : float, d
     start_year = years[0]
     end_year = years[len(years) - 1]
 
-    logging.debug("Calculating Enterprise Value using DCF Formula")
-    logging.debug("Discount Rate: %3.6f" % discount_rate)
-    logging.debug("Long Term Growth rate: %3.6f" % long_term_growth_rate)
-
     # compute short term enterprise value
     for year in range(start_year, end_year + 1):
         discounted_cashflows[year] =  fcfe_forecast[year] / ((1 + discount_rate) ** exp)
         exp += 1
 
     short_term_ev = sum(discounted_cashflows.values())
-    logging.debug("Short Term EV: %.6f" % short_term_ev)
-    
+
     terminal_value_start_fcf = discounted_cashflows[end_year]
 
     terminal_value = terminal_value_start_fcf / (discount_rate - long_term_growth_rate)
-    logging.debug("Terminal Value: %.6f" % terminal_value)
 
     return short_term_ev + terminal_value
 

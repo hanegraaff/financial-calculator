@@ -101,13 +101,16 @@ class JimmyDCFModel(BaseDCFModel):
 
         # get historical fcfe
         historical_fcfe = calculator.get_historical_simple_fcfe(cashflow_statements)
+        self.intermediate_results['historical_fcfe'] = historical_fcfe
 
         # get historical net income
         historical_net_income = calculator.get_historical_net_income(cashflow_statements)
+        self.intermediate_results['historical_net_income'] = historical_net_income
 
         # get historical revenue growth and determine growth rate
         historical_revenue = intrinio_data.get_historical_revenue(
             self.ticker, self.start_year, self.end_year)
+        self.intermediate_results['historical_revenue'] = historical_revenue
         
         # Get Shares outstanding
         outstanding_shares = intrinio_data.get_outstanding_diluted_shares(self.ticker, self.year)
@@ -120,10 +123,7 @@ class JimmyDCFModel(BaseDCFModel):
 
         # get fcfe_ni_ratio
         fcfe_ni_ratio = self.__calc_fcfe_ni_ratio__(historical_fcfe, historical_net_income)
-        self.intermediate_results['calculated_fcfe_ni_ratio'] = fcfe_ni_ratio
-
         revenue_growth = self.__calc_revenue_growth_rate__(historical_revenue)
-        self.intermediate_results['calculated_revenue_growth'] = revenue_growth
 
         # calculate histotical profit margin
         profit_margin = self.__calc_profit_margin__(historical_net_income, historical_revenue)
@@ -219,8 +219,6 @@ class JimmyDCFModel(BaseDCFModel):
 
         calculated_profit_margin = statistics.median(list(hist_profit_margin.values()))
 
-        log.debug("Historical profit margin: %s" % util.format_dict(hist_profit_margin))
-
         self.intermediate_results['hist_profit_margin'] = hist_profit_margin
         self.intermediate_results['calculated_profit_margin'] = calculated_profit_margin
 
@@ -255,7 +253,6 @@ class JimmyDCFModel(BaseDCFModel):
         try:
             for year in range(self.start_year, self.end_year):
                 hist_revenue_growth[year + 1] = (hist_revenue[year + 1]/hist_revenue[year]) - 1
-                log.debug("In %d, the revenue growth was %.6f" % (year + 1, hist_revenue_growth[year + 1]))
         except KeyError as ke:
             raise CalculationError("Could not calculate revenue growth because there wan not enough history", ke)
 
