@@ -8,14 +8,15 @@ import logging
 from log import util
 from exception.exceptions import BaseError
 from financial import calculator
-from financial import intrinio_data
+from data_provider import intrinio_data
 from dcf_models.jimmy_model import JimmyDCFModel
+from spreadsheet.spreadsheet_report import init_report_dir
 
 #
 # Main script
 #
 
-logging.basicConfig(level=logging.DEBUG, format='[%(levelname)s] - %(message)s')
+logging.basicConfig(level=logging.INFO, format='[%(levelname)s] - %(message)s')
 
 description = """ Performs a DCF analisys of a stock and returns the intrinsic price.
 
@@ -50,7 +51,8 @@ log.debug("Ticker: %s" % ticker)
 log.debug("Ticker File: %s" % ticker_file)
 log.debug("Year: %d" % year)
 
-current = datetime.datetime.now() - timedelta(days=1)
+today = datetime.datetime.now()
+five_days_ago = today - timedelta(days=5)
 
 ticker_list = []
 
@@ -64,15 +66,22 @@ else:
         logging.error("Could run script, because, %s" % (str(e)) )
         exit(-1)
 
+init_report_dir()
+
 for ticker in ticker_list:
   try:
 
-    price_dict = intrinio_data.get_daily_stock_close_prices(ticker, current, current)
-    yesterday_price = price_dict[list(price_dict.keys())[0]]
+    price_dict = intrinio_data.get_daily_stock_close_prices(ticker, five_days_ago, today)
+    
+    latest_price = price_dict[sorted(list(price_dict.keys()), reverse=True)[0]]
+    
     dcf_model = JimmyDCFModel(ticker, year)
     dcf_price = dcf_model.calculate_dcf_price()
-    log.info("Tiker: %s, Intrinsic Price: %.6f, Current Price: %.6f" % (ticker, dcf_price, yesterday_price))
+    
+    log.info("Tiker: %s, Intrinsic Price: %.6f, Current Price: %.6f" % (ticker, dcf_price, latest_price))
     log.debug(util.format_dict(dcf_model.get_itermediate_results()))
+
+    dcf_model.generate_report()
 
   except BaseError as be:
     print("Could not valuate %s, %d because: %s" % (ticker, year, str(be)))

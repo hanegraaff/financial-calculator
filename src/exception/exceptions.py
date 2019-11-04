@@ -22,7 +22,6 @@ class BaseError(Exception):
     def __print_cause__(self):
         if self.cause == None:
             return self.message
-
         return "%s. Caused by: %s" % (self.message, str(self.cause))
 
 class ValidationError(BaseError):
@@ -46,6 +45,13 @@ class CalculationError(BaseError):
     """
     def __print_cause__(self):
         return "Calculation Error: " + super().__print_cause__()
+
+class ReportError(BaseError):
+    """
+        A class representing a calculation error
+    """
+    def __print_cause__(self):
+        return "Report Error: " + super().__print_cause__()
     
 
     

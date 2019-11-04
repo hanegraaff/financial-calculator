@@ -4,7 +4,7 @@ from intrinio_sdk.rest import ApiException
 import os
 import math
 from exception.exceptions import DataError, ValidationError
-from financial import util
+from data_provider import intrinio_util
 import logging
 
 """
@@ -53,8 +53,8 @@ def get_daily_stock_close_prices(ticker : str, start_date : object, end_date : o
         }
       """
 
-      start_date_str = util.date_to_string(start_date)
-      end_date_str = util.date_to_string(end_date)
+      start_date_str = intrinio_util.date_to_string(start_date)
+      end_date_str = intrinio_util.date_to_string(end_date)
 
       price_dict = {}
 
@@ -74,7 +74,7 @@ def get_daily_stock_close_prices(ticker : str, start_date : object, end_date : o
                     (ticker, start_date_str, end_date_str), None)
 
       for price in price_list:  
-        price_dict[util.date_to_string(price.date)] = price.close
+        price_dict[intrinio_util.date_to_string(price.date)] = price.close
 
       return price_dict
 
@@ -464,6 +464,11 @@ def __read_financial_metrics__(ticker: str, start_year: int, end_year: int, tag:
         End year of the metric data
       tag : the metric name to retrieve
 
+      Raises
+      -------
+      DataError in case of any error calling the intrio API
+      ValidationError in case of an unknown exception
+
 
       Returns
       -------
@@ -476,8 +481,8 @@ def __read_financial_metrics__(ticker: str, start_year: int, end_year: int, tag:
         2014: 456,
       }
     """
-    (start_date, x) = util.get_fiscal_year_period(start_year, 0)
-    (x, end_date) = util.get_fiscal_year_period(end_year, 0)
+    (start_date, x) = intrinio_util.get_fiscal_year_period(start_year, 0)
+    (x, end_date) = intrinio_util.get_fiscal_year_period(end_year, 0)
 
     frequency = 'yearly'
 
@@ -505,5 +510,8 @@ def __read_financial_metrics__(ticker: str, start_year: int, end_year: int, tag:
 
 
 def __read_financial_metric__(ticker: str, year: int, tag: str):
+    """
+      Utility method that reads the financial metrics for a single year
+    """
     metrics = __read_financial_metrics__(ticker, year, year, tag)
     return metrics[year]

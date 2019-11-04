@@ -1,0 +1,3 @@
+intrinio_sdk>1.0
+coverage>=4.5.4
+xlsxwriter>=1.2.2

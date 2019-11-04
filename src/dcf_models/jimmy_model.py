@@ -3,14 +3,16 @@
 
 from dcf_models.base_model import BaseDCFModel
 
-from financial import intrinio_data, calculator
+from data_provider import intrinio_data
+from financial import calculator
 import math
 import datetime
 import statistics
 from datetime import timedelta
-from exception.exceptions import ValidationError, CalculationError, DataError
+from exception.exceptions import ValidationError, CalculationError, DataError, ReportError
 import logging
 from log import util
+from spreadsheet.jimmy_dcf_report import JimmyDCFReport
 
 log = logging.getLogger()
 
@@ -50,25 +52,10 @@ class JimmyDCFModel(BaseDCFModel):
         3) Inverstor is able to take a control perspective
     """
 
-    def __init__(self, ticker : str, year : int):
+    def __init__(self, ticker : str, fiscal_year : int):
+        super().__init__(ticker, fiscal_year)
 
-        self.ticker = ticker
-        self.year = year
-
-        if (ticker == None or len(ticker) == 0):
-            raise ValidationError("Invalid Ticker Symbol", None)
-
-        self.forecast_years = 4
-        self.discount_rate = 0.086
-        self.long_term_growth_rate = 0.025
-
-        self.start_year = year - 4
-        self.end_year = year
-
-        self.forecast_start_year = self.end_year + 1
-        self.forecast_end_year = self.forecast_start_year + self.forecast_years
-
-        super().__init__()
+        self.report_template = "dcf_jimmy_template.xlsx"
 
     def calculate_dcf_price(self):
         """
@@ -90,14 +77,11 @@ class JimmyDCFModel(BaseDCFModel):
             -------
                 A float with calculated DCF price value
         """
-
-        self.reset_intermediate_results()
-
         #
         # Gather all necessary data
         #
         cashflow_statements = intrinio_data.get_historical_cashflow_stmt(
-            self.ticker, self.start_year, self.end_year, None)
+            self.ticker, self.history_start_year, self.history_end_year, None)
 
         # get historical fcfe
         historical_fcfe = calculator.get_historical_simple_fcfe(cashflow_statements)
@@ -109,11 +93,11 @@ class JimmyDCFModel(BaseDCFModel):
 
         # get historical revenue growth and determine growth rate
         historical_revenue = intrinio_data.get_historical_revenue(
-            self.ticker, self.start_year, self.end_year)
+            self.ticker, self.history_start_year, self.history_end_year)
         self.intermediate_results['historical_revenue'] = historical_revenue
         
         # Get Shares outstanding
-        outstanding_shares = intrinio_data.get_outstanding_diluted_shares(self.ticker, self.year)
+        outstanding_shares = intrinio_data.get_outstanding_diluted_shares(self.ticker, self.fiscal_year)
         self.intermediate_results['outstanding_shares'] = outstanding_shares
 
         #
@@ -127,18 +111,29 @@ class JimmyDCFModel(BaseDCFModel):
 
         # calculate histotical profit margin
         profit_margin = self.__calc_profit_margin__(historical_net_income, historical_revenue)
-        revenue_forecast = self.__forecast_revenue__(historical_revenue[self.end_year], revenue_growth)
+        revenue_forecast = self.__forecast_revenue__(historical_revenue[self.history_end_year], revenue_growth)
         net_income_forecast = self.__forecast_net_income__(revenue_forecast, profit_margin)
         fcfe_forecast = self.__forecast_fcfe__(net_income_forecast, fcfe_ni_ratio)
 
         # Perform DCF Calculation and figure out enterprise value
-        enteprise_value = calculator.calc_enterprise_value(fcfe_forecast, self.long_term_growth_rate, self.discount_rate)
-        self.intermediate_results['enteprise_value'] = enteprise_value
-        price_forecast = enteprise_value / outstanding_shares
+        (enteprise_value, intermediate_results) = calculator.calc_enterprise_value(fcfe_forecast, self.long_term_growth_rate, self.discount_rate)
+        
+        self.intermediate_results.update(intermediate_results)
 
-        return price_forecast
+        self.intermediate_results['sum_discounted_cash_flows'] = sum(self.intermediate_results['discounted_cashflows'].values())
+        intrinsic_value_per_share = enteprise_value / outstanding_shares
 
+        self.intermediate_results['intrinsic_value_per_share'] = intrinsic_value_per_share
+        return intrinsic_value_per_share
 
+    
+    def generate_report(self):
+        report = JimmyDCFReport(self.report_template)
+        try:
+            report.generate_report('%s-%d.xlsx' % (self.intermediate_results['ticker'], self.intermediate_results['history_end_year']), self.get_itermediate_results())
+        except KeyError as ke:
+            raise ReportError("Could not generate report because output name was invalid", ke)
+    
     def __calc_fcfe_ni_ratio__(self, hist_fcfe : dict, hist_net_income : dict):
         """
             calculates the fcfe to net income ratio using this formula
@@ -169,8 +164,8 @@ class JimmyDCFModel(BaseDCFModel):
         fcfe_ni_ratio = {}
 
         try:
-            for i in range(self.start_year, self.end_year + 1):
-                fcfe_ni_ratio[i] = (hist_fcfe[i] / hist_net_income[i]) - 1
+            for i in range(self.history_start_year, self.history_end_year + 1):
+                fcfe_ni_ratio[i] = hist_fcfe[i] / hist_net_income[i]
         except KeyError as ke:
             raise CalculationError("Could not calculate fcfe_ni_ratio because there wan not enough history", ke)
 
@@ -212,7 +207,7 @@ class JimmyDCFModel(BaseDCFModel):
         hist_profit_margin = {}
 
         try:
-            for i in range(self.start_year, self.end_year + 1):
+            for i in range(self.history_start_year, self.history_end_year + 1):
                 hist_profit_margin[i] = hist_net_income[i] / hist_revenue[i]
         except KeyError as ke:
             raise CalculationError("Could not calculate profit margin because there wan not enough history", ke)
@@ -251,7 +246,7 @@ class JimmyDCFModel(BaseDCFModel):
         hist_revenue_growth = {}
 
         try:
-            for year in range(self.start_year, self.end_year):
+            for year in range(self.history_start_year, self.history_end_year):
                 hist_revenue_growth[year + 1] = (hist_revenue[year + 1]/hist_revenue[year]) - 1
         except KeyError as ke:
             raise CalculationError("Could not calculate revenue growth because there wan not enough history", ke)
@@ -335,7 +330,7 @@ class JimmyDCFModel(BaseDCFModel):
         net_income_forecast = {}
         
         try:
-            for year in range(self.forecast_start_year, self.forecast_end_year):
+            for year in range(self.forecast_start_year, self.forecast_end_year + 1):
                 net_income_forecast[year] = revenue_forecast[year] * profit_margin
         except KeyError as ke:
             raise CalculationError("Could not forecast net income because because not enough data was supplied", ke)
@@ -366,16 +361,16 @@ class JimmyDCFModel(BaseDCFModel):
 
             Returns
             -------
-                A dictionary containing the net income forecast
+            A dictionary containing the fcfe forecast
 
         '''
         fcfe_forecast = {}
         try:
-            for year in range(self.forecast_start_year, self.forecast_end_year):
-                fcfe_forecast[year] = net_income_forecast[year] * (1  + fcfe_ni_ratio)
+            for year in range(self.forecast_start_year, self.forecast_end_year + 1):
+                fcfe_forecast[year] = net_income_forecast[year] * fcfe_ni_ratio
         except KeyError as ke:
             raise CalculationError("Could not forecast free cash flow because not enough data was supplied", ke)
 
-        self.intermediate_results['net_income_forecast'] = net_income_forecast
+        self.intermediate_results['fcfe_forecast'] = fcfe_forecast
 
         return fcfe_forecast

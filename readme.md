@@ -28,7 +28,7 @@ the API should be saved to the environment like so:
 You may also run this in a virtual environment
 
 ```
-virtualenv venv
+python3 -m venv tutorial-env
 source venv/bin/activate
 pip install -r requirements.txt
 ```
@@ -71,11 +71,21 @@ python valuate_security.py -ticker aapl 2018
 
 ## Output
 
+### Command Line Output
 ```
-> python valuate_security.py aapl 2018
+> python valuate_security.py -ticker aapl 2018
 
-[INFO] - Tiker: AAPL, Intrinsic Price: 298.168730, Current Price: 236.410000
+[INFO] - Tiker: AAPL, Intrinsic Price: 250.034799, Current Price: 248.760000
 ```
+
+### Spreadsheet output
+The script will also generate a spreadhseet based report that includes the details of the DCF calculation. Unlike a report which just displays the result of the calculation, this spreadhseet re-implements much of the calculation and you may tweak any of the inputs and see how that affects the final price. This is useful for fine tuning the results of the calculation.
+
+Spreadhseets are stored in the ```reports``` folder relative to the main
+script using a name pattern of ```ticker-fiscal_year.xlsx```
+
+![](doc/jimmy_spreadsheet_report_aapl.png)
+
 
 ## Unit Tests
 You may run all unit tests using this command:
@@ -87,26 +97,27 @@ This command will execute all unit tests and run the coverage report (using cove
 ```
 >./test.sh
 ----------------------------------------------------------------------
-Ran 31 tests in 0.248s
+Ran 41 tests in 1.000s
 
 OK
-Name                         Stmts   Miss  Cover
-------------------------------------------------
-dcf_models/base_model.py        12      2    83%
-dcf_models/jimmy_model.py      108     12    89%
-exception/exceptions.py         21      3    86%
-financial/calculator.py         63      2    97%
-financial/intrinio_data.py      83     29    65%
-financial/util.py               13      0   100%
-log/util.py                      3      0   100%
-run_tests.py                     8      0   100%
-------------------------------------------------
-TOTAL                          311     48    85%
+Name                                Stmts   Miss  Cover
+-------------------------------------------------------
+data_provider/intrinio_data.py         83     20    76%
+data_provider/intrinio_util.py         13      0   100%
+dcf_models/base_model.py               36      2    94%
+dcf_models/jimmy_model.py             106     12    89%
+exception/exceptions.py                24      0   100%
+financial/calculator.py                62      2    97%
+log/util.py                             3      1    67%
+run_tests.py                            9      0   100%
+spreadsheet/jimmy_dcf_report.py        34     22    35%
+spreadsheet/spreadsheet_report.py      31      1    97%
+-------------------------------------------------------
+TOTAL                                 401     60    85%
 ```
 
 ## Future enhancements
-1) Better test coverage. 
-2) Perform TTM estimates when a year end financial report does not yet exist.
-3) Calculate Cost of Capital using CAPM forumla.
-4) Throw exception when a security is not a good candidate for this model instead of proceeding with the calculation.
-5) Better forecasting. Currently it's just based on historical performance.
+1) Perform TTM estimates when a year end financial report does not yet exist.
+2) Calculate Cost of Capital using CAPM forumla.
+3) Throw exception when a security is not a good candidate for this model instead of proceeding with the calculation.
+4) More models

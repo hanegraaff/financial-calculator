@@ -4,7 +4,7 @@ from intrinio_sdk.rest import ApiException
 from exception.exceptions import ValidationError
 from exception.exceptions import DataError
 from exception.exceptions import CalculationError
-from financial import intrinio_data
+from data_provider import intrinio_data
 from financial import calculator
 
 
@@ -132,7 +132,7 @@ class TestFinancialCalculator(unittest.TestCase):
 
     def test_dcf_simple(self):
         #100 / (2)^1 + 50 / (2)^2 + (100/0.5) = 87.5
-        dcf_price = calculator.calc_enterprise_value({2008: 100, 2009: 100}, 0.5, 1)
+        (dcf_price, x) = calculator.calc_enterprise_value({2008: 100, 2009: 100}, 0.5, 1)
         self.assertEqual(dcf_price, 125)
 
         

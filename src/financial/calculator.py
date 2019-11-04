@@ -6,7 +6,7 @@ models provided by this software.
 This module will likely be refactored over time
 """
 
-from financial import intrinio_data
+from data_provider import intrinio_data
 import math
 import datetime
 import statistics
@@ -21,9 +21,26 @@ log = logging.getLogger()
 def calc_enterprise_value(fcfe_forecast : dict, long_term_growth_rate : float, discount_rate : float):
     """
         Calculates the enterprise value by performing a Discounted Cash Flow calculation
-        using a dictionary of forecasted cash flows a pair of growth rates and a discount rate
+        using a dictionary of forecasted cash flows a growth rate and a discount rate
 
+        Returns a float consisting of the sum of discounted cash flows and terminal value
+
+        Parameters
+        ----------
+        fcfe_forecast : dict
+            A dictionary (year->value) for cashflow forecasts
+        long_term_growth_rate : float
+            The long term groth rate used by the terminal value
+        discount_rate : float
+            The discount rate
+
+        Returns
+        -------
+        A tuple containing the enterprise value as a float and dictionary of intermediate
+        results used to aid in testing.
     """
+    intermediate_results = {}
+
     def validate_parameters():
         if (fcfe_forecast == None or len(fcfe_forecast) == 0
             or long_term_growth_rate <= 0 
@@ -40,21 +57,25 @@ def calc_enterprise_value(fcfe_forecast : dict, long_term_growth_rate : float, d
 
     # todo, see if we can avoid this sort.
     years = sorted(fcfe_forecast.keys())
-    start_year = years[0]
-    end_year = years[len(years) - 1]
+    history_start_year = years[0]
+    history_end_year = years[len(years) - 1]
 
     # compute short term enterprise value
-    for year in range(start_year, end_year + 1):
+    for year in range(history_start_year, history_end_year + 1):
         discounted_cashflows[year] =  fcfe_forecast[year] / ((1 + discount_rate) ** exp)
         exp += 1
 
-    short_term_ev = sum(discounted_cashflows.values())
+    intermediate_results['discounted_cashflows'] = discounted_cashflows
 
-    terminal_value_start_fcf = discounted_cashflows[end_year]
+    terminal_value_start_fcf = discounted_cashflows[history_end_year]
 
     terminal_value = terminal_value_start_fcf / (discount_rate - long_term_growth_rate)
+    intermediate_results['terminal_value'] = terminal_value
+    
+    enterprise_value = sum(discounted_cashflows.values()) + terminal_value
+    intermediate_results['enterprise_value'] = enterprise_value
 
-    return short_term_ev + terminal_value
+    return (enterprise_value, intermediate_results)
 
 
 
