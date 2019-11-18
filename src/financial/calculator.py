@@ -13,7 +13,7 @@ import statistics
 from datetime import timedelta
 from exception.exceptions import CalculationError, DataError
 import logging
-from log import util
+from support import util
 
 log = logging.getLogger()
 

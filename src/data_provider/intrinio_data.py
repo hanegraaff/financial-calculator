@@ -5,6 +5,7 @@ import os
 import math
 from exception.exceptions import DataError, ValidationError
 from data_provider import intrinio_util
+from support.financial_cache import cache
 import logging
 
 """
@@ -20,6 +21,9 @@ intrinio_sdk.ApiClient().configuration.api_key['api_key'] = API_KEY
 fundamentals_api = intrinio_sdk.FundamentalsApi()
 company_api = intrinio_sdk.CompanyApi()
 security_api = intrinio_sdk.SecurityApi()
+
+
+INTRINIO_CACHE_PREFIX = 'intrinio'
 
 
 def get_daily_stock_close_prices(ticker : str, start_date : object, end_date : object):
@@ -58,19 +62,24 @@ def get_daily_stock_close_prices(ticker : str, start_date : object, end_date : o
 
       price_dict = {}
 
-      try:
-        api_response = security_api.get_security_stock_prices(ticker, start_date=start_date_str, end_date=end_date_str, frequency='daily', page_size=100)
-      except ApiException as ae:
-        raise DataError("API Error while reading price data from Intrinio Security API: ('%s', %s - %s)" %
-                        (ticker, start_date_str, end_date_str), ae)
-      except Exception as e:
-        raise ValidationError("Unknown Error while reading price data from Intrinio Security API: ('%s', %s - %s)" %
-                        (ticker, start_date_str, end_date_str), e)
+      cache_key = "%s-%s-%s-%s-%s" % (INTRINIO_CACHE_PREFIX, ticker, start_date_str, end_date_str, "closing-prices")
+      api_response = cache.read(cache_key)
+
+      if api_response == None:
+        try:
+          api_response = security_api.get_security_stock_prices(ticker, start_date=start_date_str, end_date=end_date_str, frequency='daily', page_size=100)
+          cache.write(cache_key, api_response)
+        except ApiException as ae:
+          raise DataError("API Error while reading price data from Intrinio Security API: ('%s', %s - %s)" %
+                          (ticker, start_date_str, end_date_str), ae)
+        except Exception as e:
+          raise ValidationError("Unknown Error while reading price data from Intrinio Security API: ('%s', %s - %s)" %
+                          (ticker, start_date_str, end_date_str), e)
 
       price_list = api_response.stock_prices
 
       if len(price_list) == 0:
-        raise DataError("No prices returned from from Intrinio Security API: ('%s', %s - %s)" %
+        raise DataError("No prices returned from Intrinio Security API: ('%s', %s - %s)" %
                     (ticker, start_date_str, end_date_str), None)
 
       for price in price_list:  
@@ -416,16 +425,24 @@ def __read_historical_financial_statement__(ticker: str, statement_name: str, ye
     hist_statements = {}
     ticker = ticker.upper()
 
-    try:
-        for i in range(year_from, year_to + 1):
-            satement_name = ticker + "-" + \
-                statement_name + "-" + str(i) + "-FY"
+    statement_type = 'FY'
 
+    try:
+      for i in range(year_from, year_to + 1):
+          satement_name = ticker + "-" + \
+              statement_name + "-" + str(i) + "-" + statement_type
+
+          cache_key = "%s-%s-%s-%s-%s-%d" % (INTRINIO_CACHE_PREFIX, "statement", ticker, statement_name, statement_type, i)
+          statement = cache.read(cache_key)
+
+          if statement == None:
             statement = fundamentals_api.get_fundamental_standardized_financials(
                 satement_name)
 
-            hist_statements[i] = __transform_financial_stmt__(
-                statement.standardized_financials, tag_filter_list)
+            cache.write(cache_key, statement)
+
+          hist_statements[i] = __transform_financial_stmt__(
+              statement.standardized_financials, tag_filter_list)
 
     except ApiException as ae:
         raise DataError(
@@ -486,15 +503,22 @@ def __read_financial_metrics__(ticker: str, start_year: int, end_year: int, tag:
 
     frequency = 'yearly'
 
-    try:
-        api_response = company_api.get_company_historical_data(
-            ticker, tag, frequency=frequency, start_date=start_date, end_date=end_date)
-    except ApiException as ae:
-        raise DataError(
-            "Error retrieving ('%s', %d - %d) -> '%s' from Intrinio Company API" % (ticker, start_year, end_year, tag), ae)
-    except Exception as e:
-        raise ValidationError(
-            "Error parsing ('%s', %d - %d) -> '%s' from Intrinio Company API" % (ticker, start_year, end_year, tag), e)
+    # check the cache first
+    cache_key = "%s-%s-%s-%d-%d-%s-%s" % (INTRINIO_CACHE_PREFIX, "metric", ticker, start_year, end_year, frequency, tag)
+    api_response = cache.read(cache_key)
+
+    if api_response == None:
+      # else call the API directly
+      try:
+          api_response = company_api.get_company_historical_data(
+              ticker, tag, frequency=frequency, start_date=start_date, end_date=end_date)
+          cache.write(cache_key, api_response)
+      except ApiException as ae:
+          raise DataError(
+              "Error retrieving ('%s', %d - %d) -> '%s' from Intrinio Company API" % (ticker, start_year, end_year, tag), ae)
+      except Exception as e:
+          raise ValidationError(
+              "Error parsing ('%s', %d - %d) -> '%s' from Intrinio Company API" % (ticker, start_year, end_year, tag), e)
 
     if len(api_response.historical_data) == 0:
         raise DataError("No Data returned for ('%s', %d - %d) -> '%s' from Intrinio Company API" %
@@ -515,3 +539,4 @@ def __read_financial_metric__(ticker: str, year: int, tag: str):
     """
     metrics = __read_financial_metrics__(ticker, year, year, tag)
     return metrics[year]
+

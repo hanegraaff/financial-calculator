@@ -11,8 +11,8 @@ import statistics
 from datetime import timedelta
 from exception.exceptions import ValidationError, CalculationError, DataError, ReportError
 import logging
-from log import util
-from spreadsheet.jimmy_dcf_report import JimmyDCFReport
+from support import util
+from reporting.jimmy_dcf_report import JimmyDCFReport
 
 log = logging.getLogger()
 

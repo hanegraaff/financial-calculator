@@ -7,6 +7,7 @@ from exception.exceptions import FileSystemError
 def create_dir(dirname):
     """
         Creates the report directory if not already present
+
         Parameters
         ------------
         None

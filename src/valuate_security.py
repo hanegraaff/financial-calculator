@@ -5,12 +5,13 @@ import argparse
 import datetime
 from datetime import timedelta
 import logging
-from log import util
+from support import util
 from exception.exceptions import BaseError
 from financial import calculator
 from data_provider import intrinio_data
 from dcf_models.jimmy_model import JimmyDCFModel
-from spreadsheet.spreadsheet_report import init_report_dir
+from reporting.spreadsheet_report import init_report_dir
+from support.financial_cache import cache
 
 #
 # Main script
@@ -69,6 +70,7 @@ else:
 init_report_dir()
 
 for ticker in ticker_list:
+
   try:
 
     price_dict = intrinio_data.get_daily_stock_close_prices(ticker, five_days_ago, today)
@@ -85,3 +87,6 @@ for ticker in ticker_list:
 
   except BaseError as be:
     print("Could not valuate %s, %d because: %s" % (ticker, year, str(be)))
+
+# close the financial cache
+cache.close()

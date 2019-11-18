@@ -24,17 +24,20 @@ the API should be saved to the environment like so:
 
 ```export INTRINIO_API_KEY=[your API key]```
 
-### Setting up your virtual environment
-You may also run this in a virtual environment
+### Installing requirements
+```
+  pip install -r requirements.txt
+```
+
+You may run this in a virtual environment like so:
 
 ```
-python3 -m venv tutorial-env
+python3 -m venv venv
 source venv/bin/activate
 pip install -r requirements.txt
 ```
 
 ## Running the script
-
 The calculation can be done either for an individual stock or a file containing a list of them.
 
 The file should contain a signle ticker per line. As an example, see ```ticker-list.txt```
@@ -86,6 +89,27 @@ script using a name pattern of ```ticker-fiscal_year.xlsx```
 
 ![](doc/jimmy_spreadsheet_report_aapl.png)
 
+## Caching of financial data
+All financial data is saved to a local cache since the data is usually immutable. As of this version the data is set to never expire, and the cache will grow to a maximum size of 4GB.
+
+The cache is located in the following path:
+
+```
+./financial-data/
+./financial-data/cache.db
+```
+
+To delete or reset the contents of the cache, simply delete entire ```./financial-data/``` folder
+
+
+### Spreadsheet output
+The script will also generate a spreadhseet based report that includes the details of the DCF calculation. Unlike a report which just displays the result of the calculation, this spreadhseet re-implements much of the calculation and you may tweak any of the inputs and see how that affects the final price. This is useful for fine tuning the results of the calculation.
+
+Spreadhseets are stored in the ```reports``` folder relative to the main
+script using a name pattern of ```ticker-fiscal_year.xlsx```
+
+![](doc/jimmy_spreadsheet_report_aapl.png)
+
 
 ## Unit Tests
 You may run all unit tests using this command:
@@ -97,23 +121,24 @@ This command will execute all unit tests and run the coverage report (using cove
 ```
 >./test.sh
 ----------------------------------------------------------------------
-Ran 41 tests in 1.000s
+Ran 48 tests in 0.082s
 
 OK
-Name                                Stmts   Miss  Cover
--------------------------------------------------------
-data_provider/intrinio_data.py         83     20    76%
-data_provider/intrinio_util.py         13      0   100%
-dcf_models/base_model.py               36      2    94%
-dcf_models/jimmy_model.py             106     12    89%
-exception/exceptions.py                24      0   100%
-financial/calculator.py                62      2    97%
-log/util.py                             3      1    67%
-run_tests.py                            9      0   100%
-spreadsheet/jimmy_dcf_report.py        34     22    35%
-spreadsheet/spreadsheet_report.py      31      1    97%
--------------------------------------------------------
-TOTAL                                 401     60    85%
+Name                              Stmts   Miss  Cover
+-----------------------------------------------------
+data_provider/intrinio_data.py       98     23    77%
+data_provider/intrinio_util.py       13      0   100%
+dcf_models/base_model.py             36      2    94%
+dcf_models/jimmy_model.py           106     12    89%
+exception/exceptions.py              27      1    96%
+financial/calculator.py              62      2    97%
+reporting/jimmy_dcf_report.py        35     23    34%
+reporting/spreadsheet_report.py      36      2    94%
+run_tests.py                         12      0   100%
+support/financial_cache.py           29      0   100%
+support/util.py                      11      1    91%
+-----------------------------------------------------
+TOTAL                               465     66    86%
 ```
 
 ## Future enhancements

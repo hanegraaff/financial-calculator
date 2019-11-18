@@ -3,7 +3,7 @@ from exception.exceptions import ValidationError, CalculationError, ReportError
 from dcf_models.jimmy_model import JimmyDCFModel
 from data_provider import intrinio_data
 from unittest.mock import patch
-from log import util
+from support import util
 
  
 class TestJimmyModel(unittest.TestCase):
@@ -62,27 +62,27 @@ class TestJimmyModel(unittest.TestCase):
         dcf_model = JimmyDCFModel('aapl', 2018)
 
         with patch.object(intrinio_data, 'get_historical_cashflow_stmt',
-                          return_value=self.cashflow_statement):
-            with patch.object(intrinio_data, 'get_historical_revenue',
-                              return_value=self.historical_revenue):
-                with patch.object(intrinio_data, 'get_outstanding_diluted_shares',
+                          return_value=self.cashflow_statement), \
+             patch.object(intrinio_data, 'get_historical_revenue',
+                              return_value=self.historical_revenue), \
+             patch.object(intrinio_data, 'get_outstanding_diluted_shares',
                                   return_value=1000):
 
-                    dcf_model.discount_rate = 0.0975
-                    dcf_model.long_term_growth_rate = 0.025
+                dcf_model.discount_rate = 0.0975
+                dcf_model.long_term_growth_rate = 0.025
 
-                    price = dcf_model.calculate_dcf_price()
+                price = dcf_model.calculate_dcf_price()
 
-                    self.assertEqual(round(price, 3), 4.618)
-                
-                    dcf_model.discount_rate = .08
-                    price = dcf_model.calculate_dcf_price()
+                self.assertEqual(round(price, 3), 4.618)
+            
+                dcf_model.discount_rate = .08
+                price = dcf_model.calculate_dcf_price()
 
-                    self.assertEqual(round(price, 3), 6.208)
+                self.assertEqual(round(price, 3), 6.208)
 
-                    dcf_model.discount_rate = 1
-                    price = dcf_model.calculate_dcf_price()
-                    self.assertEqual(round(price, 3), 0.208)
+                dcf_model.discount_rate = 1
+                price = dcf_model.calculate_dcf_price()
+                self.assertEqual(round(price, 3), 0.208)
 
 
     def test_dcf_with_invalid_parameters(self):
@@ -94,32 +94,32 @@ class TestJimmyModel(unittest.TestCase):
 
         dcf_model = JimmyDCFModel('aapl', 2018)
 
-        with patch.object(intrinio_data, 'get_historical_cashflow_stmt',
-                            return_value=self.cashflow_statement):
-            with patch.object(intrinio_data, 'get_historical_revenue',
-                                return_value=self.historical_revenue):
-                with patch.object(intrinio_data, 'get_outstanding_diluted_shares',
-                                    return_value=1000):
+        with patch.object(intrinio_data, 'get_historical_cashflow_stmt', 
+                            return_value=self.cashflow_statement), \
+             patch.object(intrinio_data, 'get_historical_revenue', 
+                            return_value=self.historical_revenue), \
+             patch.object(intrinio_data, 'get_outstanding_diluted_shares', 
+                            return_value=1000):
 
-                    with self.assertRaises(CalculationError):
-                        dcf_model.discount_rate = 0
-                        dcf_model.long_term_growth_rate = 1
-                        dcf_model.calculate_dcf_price()
-                    
-                    with self.assertRaises(CalculationError): 
-                        dcf_model.discount_rate = 1
-                        dcf_model.long_term_growth_rate = 0
-                        dcf_model.calculate_dcf_price()
+                with self.assertRaises(CalculationError):
+                    dcf_model.discount_rate = 0
+                    dcf_model.long_term_growth_rate = 1
+                    dcf_model.calculate_dcf_price()
+                
+                with self.assertRaises(CalculationError): 
+                    dcf_model.discount_rate = 1
+                    dcf_model.long_term_growth_rate = 0
+                    dcf_model.calculate_dcf_price()
 
-                    with self.assertRaises(CalculationError):
-                        dcf_model.discount_rate = 1
-                        dcf_model.long_term_growth_rate = 1
-                        dcf_model.calculate_dcf_price()
+                with self.assertRaises(CalculationError):
+                    dcf_model.discount_rate = 1
+                    dcf_model.long_term_growth_rate = 1
+                    dcf_model.calculate_dcf_price()
 
-                    with self.assertRaises(CalculationError):
-                        dcf_model.discount_rate = 5
-                        dcf_model.long_term_growth_rate = 10
-                        dcf_model.calculate_dcf_price()
+                with self.assertRaises(CalculationError):
+                    dcf_model.discount_rate = 5
+                    dcf_model.long_term_growth_rate = 10
+                    dcf_model.calculate_dcf_price()
                 
 
     def test_generate_invalid_report(self):

@@ -52,6 +52,13 @@ class ReportError(BaseError):
     """
     def __print_cause__(self):
         return "Report Error: " + super().__print_cause__()
+
+class FileSystemError(BaseError):
+    """
+        A class representing a flesystem error
+    """
+    def __print_cause__(self):
+        return "Filesystem Error: " + super().__print_cause__()
     
 
     
