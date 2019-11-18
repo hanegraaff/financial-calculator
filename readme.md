@@ -102,14 +102,6 @@ The cache is located in the following path:
 To delete or reset the contents of the cache, simply delete entire ```./financial-data/``` folder
 
 
-### Spreadsheet output
-The script will also generate a spreadhseet based report that includes the details of the DCF calculation. Unlike a report which just displays the result of the calculation, this spreadhseet re-implements much of the calculation and you may tweak any of the inputs and see how that affects the final price. This is useful for fine tuning the results of the calculation.
-
-Spreadhseets are stored in the ```reports``` folder relative to the main
-script using a name pattern of ```ticker-fiscal_year.xlsx```
-
-![](doc/jimmy_spreadsheet_report_aapl.png)
-
 
 ## Unit Tests
 You may run all unit tests using this command:
