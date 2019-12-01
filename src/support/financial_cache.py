@@ -24,7 +24,12 @@ class FinancialCache():
             The path where the cache will be located
 
             max_cache_size_bytes : int (kwargs)
-            the maximum size of the cache in bytes
+            (optional) the maximum size of the cache in bytes
+
+            Raises
+            ------
+            ValidationError : in case an invalid cache size is supplied
+            FileSystemError : in case the cache directory cannot be created
 
             
             Returns
@@ -48,9 +53,40 @@ class FinancialCache():
         log.debug("Cache was initialized: %s" % path)
 
     def write(self, key : str, value : object):
+        """
+            Writes an object to the cache
+
+            Parameters
+            ----------
+            key : str
+            The cache key
+
+            value : object
+            The cache value
+
+            Returns
+            ----------
+            None
+        """
+        if (key == "" or key is None) or (value == "" or value is None):
+            return
+
         self.cache[key] = value
 
     def read(self, key):
+        """
+            Reads an object to the cache and returns None if it cannot
+            be found
+
+            Parameters
+            ----------
+            key : str
+            The cache key
+
+            Returns
+            ----------
+            The object in question, or None if they key is not present
+        """
         try:
             return self.cache[key]
         except KeyError:

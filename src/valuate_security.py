@@ -10,8 +10,9 @@ from exception.exceptions import BaseError
 from financial import calculator
 from data_provider import intrinio_data
 from dcf_models.jimmy_model import JimmyDCFModel
-from reporting.spreadsheet_report import init_report_dir
 from support.financial_cache import cache
+from reporting.workbook_report import WorkbookReport
+from reporting.jimmy_report_worksheet import JimmyReportWorksheet
 
 #
 # Main script
@@ -29,11 +30,11 @@ description = """ Performs a DCF analisys of a stock and returns the intrinsic p
               """
 
 
-
 parser = argparse.ArgumentParser(description=description)
 parser.add_argument("-ticker", help="Ticker Symbol", type=str)
 parser.add_argument("-ticker-file", help="Ticker Symbol file", type=str)
-parser.add_argument("year", help="Year of the most recent year end financial statements", type=int)
+parser.add_argument(
+    "year", help="Year of the most recent year end financial statements", type=int)
 
 log = logging.getLogger()
 
@@ -61,32 +62,32 @@ if (ticker != None):
     ticker_list.append(ticker)
 else:
     try:
-      with open(ticker_file) as f:
-        ticker_list = f.read().splitlines()
+        with open(ticker_file) as f:
+            ticker_list = f.read().splitlines()
     except Exception as e:
-        logging.error("Could run script, because, %s" % (str(e)) )
+        logging.error("Could run script, because, %s" % (str(e)))
         exit(-1)
 
-init_report_dir()
 
 for ticker in ticker_list:
+    try:
+        price_dict = intrinio_data.get_daily_stock_close_prices(
+            ticker, five_days_ago, today)
+        latest_price = price_dict[sorted(
+            list(price_dict.keys()), reverse=True)[0]]
 
-  try:
+        report = WorkbookReport(None)
+        report.add_worksheet(JimmyReportWorksheet(
+        ), "Jimmy DCF", JimmyDCFModel(ticker, year))
 
-    price_dict = intrinio_data.get_daily_stock_close_prices(ticker, five_days_ago, today)
-    
-    latest_price = price_dict[sorted(list(price_dict.keys()), reverse=True)[0]]
-    
-    dcf_model = JimmyDCFModel(ticker, year)
-    dcf_price = dcf_model.calculate_dcf_price()
-    
-    log.info("Tiker: %s, Intrinsic Price: %.6f, Current Price: %.6f" % (ticker, dcf_price, latest_price))
-    log.debug(util.format_dict(dcf_model.get_itermediate_results()))
+        report.generate_report('%s-%d.xlsx' % (ticker, year))
 
-    dcf_model.generate_report()
+        for worksheet_title in report.price_dict.keys():
+            log.info("Ticker: %s, Model %s, Intrinsic Price: %.6f, Current Price: %.6f" %
+                     (ticker, worksheet_title, report.price_dict[worksheet_title], latest_price))
 
-  except BaseError as be:
-    print("Could not valuate %s, %d because: %s" % (ticker, year, str(be)))
+    except BaseError as be:
+        print("Could not valuate %s, %d because: %s" % (ticker, year, str(be)))
 
 # close the financial cache
 cache.close()

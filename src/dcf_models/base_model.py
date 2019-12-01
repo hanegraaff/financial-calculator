@@ -36,7 +36,7 @@ class BaseDCFModel(ABC):
         self.forecast_start_year = self.fiscal_year + 1
         self.forecast_end_year = self.fiscal_year + self.FORECAST_YEARS
 
-        self.reset_intermediate_results()
+        self.__reset_intermediate_results__()
     
 
     @abstractmethod
@@ -47,18 +47,39 @@ class BaseDCFModel(ABC):
         """
         pass
 
-    @abstractmethod
-    def generate_report(self):
-        """
-            Generates a report showing the results of the DCF
-            Calculation
-        """
-        pass
 
     def get_itermediate_results(self):
+        '''
+            Returns the intermediate and final results of this model's
+            calculation as a dictionary. The contents vary by calculation, 
+            however some basic information like the ticker symbol and the
+            range of history and forecast years stay the same.
+
+            Parameters
+            ----------
+            None.
+
+            Returns
+            -------
+            A dictionary containing the results of the calculation. These are
+            used for testing and reporting
+        '''
         return self.intermediate_results
 
-    def reset_intermediate_results(self):
+    def __reset_intermediate_results__(self):
+
+        '''
+            Resets the dictionary of intermediate results.
+
+            Parameters
+            ----------
+            None
+
+            Returns
+            -------
+            None
+        '''
+        
         self.intermediate_results = {}
         
         # populate the intermediate results with basic information

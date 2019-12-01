@@ -1,10 +1,10 @@
 """Author: Mark Hanegraaff -- 2019
 """
 from exception.exceptions import ValidationError, ReportError
-from reporting.spreadsheet_report import SpreadsheetReport
+from reporting.report_worksheet import ReportWorksheet
 
 
-class JimmyDCFReport(SpreadsheetReport):
+class JimmyReportWorksheet(ReportWorksheet):
     """ 
         
         Jimmy DCF Report. Creates a spreadhseet with the Jimmy DCF
@@ -14,10 +14,10 @@ class JimmyDCFReport(SpreadsheetReport):
             None
     """
 
-    def __init__(self, templateName: str):
-        super().__init__(templateName)
+    def __init__(self):
+        super().__init__("dcf_jimmy_template.xlsx")
 
-    def prepare_report(self, worksheet : object, report_parameters : dict):
+    def prepare_worksheet(self, worksheet : object, report_parameters : dict):
 
         try:
             # replace parameters

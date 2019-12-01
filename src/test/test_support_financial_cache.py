@@ -27,7 +27,37 @@ class TestFinancialCache(unittest.TestCase):
         value = 1234
 
         self.test_cache.write(key, value)
-        self.assertTrue(self.test_cache.read(key), value)
+        self.assertEqual(self.test_cache.read(key), value)
+
+    def test_empty_key(self):
+        key = ""
+        value = 1234
+
+        self.test_cache.write(key, value)
+        self.assertEqual(self.test_cache.read(key), None)
+
+    def test_none_key(self):
+        key = None
+        value = 1234
+
+        self.test_cache.write(key, value)
+        self.assertEqual(self.test_cache.read(key), None)
+
+
+    def test_empty_value(self):
+        key = 'test-key'
+        value = ""
+
+        self.test_cache.write(key, value)
+        self.assertEqual(self.test_cache.read(key), None)
+
+
+    def test_none_value(self):
+        key = 'test-key'
+        value = None
+
+        self.test_cache.write(key, value)
+        self.assertEqual(self.test_cache.read(key), None)
 
 
     def test_string_value(self):

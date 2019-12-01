@@ -44,7 +44,8 @@ def get_daily_stock_close_prices(ticker : str, start_date : object, end_date : o
         
         Raises
         -----------
-        CalculationError in case of invalid paramters
+        ValidationError in case of invalid paramters
+        DataError in case of any Intrinio errors
 
         Returns
         -----------

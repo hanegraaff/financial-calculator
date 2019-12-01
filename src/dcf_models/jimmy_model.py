@@ -12,7 +12,6 @@ from datetime import timedelta
 from exception.exceptions import ValidationError, CalculationError, DataError, ReportError
 import logging
 from support import util
-from reporting.jimmy_dcf_report import JimmyDCFReport
 
 log = logging.getLogger()
 
@@ -36,7 +35,7 @@ class JimmyDCFModel(BaseDCFModel):
            analyst forecast. Here we use the historical average.
         5) Determine historical profit margin (net margin) by dividing net income
            by revenue. Ideally the profit margin shoul be fairly consistent.
-        6) Forecast net income by multipling revenue by profit margin
+        6) Forecast net income by multiplying revenue by profit margin
         7) Forecast FCFE by multiplying net income by the number determined in step 3.
         8) Determine cost of capital. Currently hardcoded.
         9) Apply the DCF forumla using free cash flow forecasts, growth estimate and
@@ -80,6 +79,7 @@ class JimmyDCFModel(BaseDCFModel):
         #
         # Gather all necessary data
         #
+        
         cashflow_statements = intrinio_data.get_historical_cashflow_stmt(
             self.ticker, self.history_start_year, self.history_end_year, None)
 
@@ -126,14 +126,7 @@ class JimmyDCFModel(BaseDCFModel):
         self.intermediate_results['intrinsic_value_per_share'] = intrinsic_value_per_share
         return intrinsic_value_per_share
 
-    
-    def generate_report(self):
-        report = JimmyDCFReport(self.report_template)
-        try:
-            report.generate_report('%s-%d.xlsx' % (self.intermediate_results['ticker'], self.intermediate_results['history_end_year']), self.get_itermediate_results())
-        except KeyError as ke:
-            raise ReportError("Could not generate report because output name was invalid", ke)
-    
+   
     def __calc_fcfe_ni_ratio__(self, hist_fcfe : dict, hist_net_income : dict):
         """
             calculates the fcfe to net income ratio using this formula
