@@ -1,7 +1,7 @@
 """Author: Mark Hanegraaff -- 2019
 """
 
-from dcf_models.base_model import BaseDCFModel
+from valuation_models.base_model import BaseValudationModel
 
 from data_provider import intrinio_data
 from financial import calculator
@@ -15,7 +15,7 @@ from support import util
 
 log = logging.getLogger()
 
-class JimmyDCFModel(BaseDCFModel):
+class JimmyValuationModel(BaseValudationModel):
 
     """
         Computes a DCF calculation based on a variation of the "Jimmy" method, which

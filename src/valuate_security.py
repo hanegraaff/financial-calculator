@@ -9,7 +9,7 @@ from support import util
 from exception.exceptions import BaseError
 from financial import calculator
 from data_provider import intrinio_data
-from dcf_models.jimmy_model import JimmyDCFModel
+from valuation_models.jimmy_model import JimmyValuationModel
 from support.financial_cache import cache
 from reporting.workbook_report import WorkbookReport
 from reporting.jimmy_report_worksheet import JimmyReportWorksheet
@@ -78,7 +78,7 @@ for ticker in ticker_list:
 
         report = WorkbookReport(None)
         report.add_worksheet(JimmyReportWorksheet(
-        ), "Jimmy DCF", JimmyDCFModel(ticker, year))
+        ), "Jimmy DCF", JimmyValuationModel(ticker, year))
 
         report.generate_report('%s-%d.xlsx' % (ticker, year))
 

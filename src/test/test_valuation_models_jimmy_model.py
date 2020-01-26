@@ -1,6 +1,6 @@
 import unittest
 from exception.exceptions import ValidationError, CalculationError, ReportError
-from dcf_models.jimmy_model import JimmyDCFModel
+from valuation_models.jimmy_model import JimmyValuationModel
 from data_provider import intrinio_data
 from unittest.mock import patch
 from support import util
@@ -46,7 +46,7 @@ class TestJimmyModel(unittest.TestCase):
 
     def test_dcf_no_symbol(self):
         with self.assertRaises(ValidationError):
-            dcf_model = JimmyDCFModel(None, 2018)
+            dcf_model = JimmyValuationModel(None, 2018)
             dcf_model.calculate_dcf_price()
 
     
@@ -59,7 +59,7 @@ class TestJimmyModel(unittest.TestCase):
             Results are reconciled with the template spreadsheet
         """
 
-        dcf_model = JimmyDCFModel('aapl', 2018)
+        dcf_model = JimmyValuationModel('aapl', 2018)
 
         with patch.object(intrinio_data, 'get_historical_cashflow_stmt',
                           return_value=self.cashflow_statement), \
@@ -92,7 +92,7 @@ class TestJimmyModel(unittest.TestCase):
             and discount rate
         """
 
-        dcf_model = JimmyDCFModel('aapl', 2018)
+        dcf_model = JimmyValuationModel('aapl', 2018)
 
         with patch.object(intrinio_data, 'get_historical_cashflow_stmt', 
                             return_value=self.cashflow_statement), \
@@ -124,7 +124,7 @@ class TestJimmyModel(unittest.TestCase):
 
     '''def test_generate_invalid_report(self):
 
-        dcf_model = JimmyDCFModel('aapl', 2018)
+        dcf_model = JimmyValuationModel('aapl', 2018)
 
         # test that the report won't be generated if calculations are
         # missing

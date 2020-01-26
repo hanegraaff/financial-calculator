@@ -4,9 +4,9 @@
 from abc import ABC, abstractmethod
 from exception.exceptions import ValidationError
  
-class BaseDCFModel(ABC):
+class BaseValudationModel(ABC):
     """
-        Base class for all DCF Models.
+        Base class for all Valudation Models.
         The current implementation supports the following features:
         1) A consistent method to compute the DCF price
         2) A dictionary of intermediate results that can be used

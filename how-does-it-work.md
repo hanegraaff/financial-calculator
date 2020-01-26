@@ -7,10 +7,10 @@ Will estimate the intrinsic price for AAPL as of fiscal year end 2018 using a di
 
 It's output is a report containing the results of the calculation.
 
-Calculations are referred to as "models" throughout this project. Each model uses the same DCF formula to calculate its intrinsic price, but varies in terms of how it forecasts its free cash flows and discount rates. Models download historical financial statements from a data provider (currently "Intrinio"), and use it as inputs to their calculations.
+Calculations are referred to as "valuation models" throughout this project. Each model uses the same DCF formula to calculate its intrinsic price, but varies in terms of how it forecasts its free cash flows and discount rates. Each model download historical financial statements from a data provider (currently "Intrinio"), and use it as inputs to their calculations.
 
-## Models
-All models (as of this version there is only one) are derived from an abstract class called ```BaseDCFModel``` which has the following characteristics:
+## Valudation Models
+All models (as of this version there is only one) are derived from an abstract class called ```BaseValudationModel``` which has the following characteristics:
 
 1) Sets the discount rate to a constant 9.75%
 2) Sets long term growth rate (used for terminal value) to a constant 2.5%
@@ -19,10 +19,10 @@ All models (as of this version there is only one) are derived from an abstract c
 
 It also provides a way to all store and retrieve all intermediate results, which are used for both testing as well report generation.
 
-Here is a condensed version of the ```BaseDCFModel``` class
+Here is a condensed version of the ```BaseValudationModel``` class
 
 ```python
-class BaseDCFModel(ABC):
+class BaseValudationModel(ABC):
   """
   Base class for all DCF Models.
   The current implementation supports the following features:
@@ -96,7 +96,7 @@ from exception.exceptions import ValidationError, ReportError
 
 report = WorkbookReport(None)
 
-report.add_worksheet(JimmyReportWorksheet(), "Jimmy DCF", JimmyDCFModel('aapl', 2018))
+report.add_worksheet(JimmyReportWorksheet(), "Jimmy DCF", JimmyValuationModel('aapl', 2018))
 
 try:
   report.generate_report('output.xlsx')

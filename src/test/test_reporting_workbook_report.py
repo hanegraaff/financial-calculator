@@ -4,7 +4,7 @@ from intrinio_sdk.rest import ApiException
 from exception.exceptions import ReportError, ValidationError, FileSystemError
 from reporting.workbook_report import WorkbookReport
 from reporting.jimmy_report_worksheet import JimmyReportWorksheet
-from dcf_models.jimmy_model import JimmyDCFModel
+from valuation_models.jimmy_model import JimmyValuationModel
 from openpyxl import Workbook
 from openpyxl import load_workbook
 import os.path
@@ -26,7 +26,7 @@ class TestWorkbookReport(unittest.TestCase):
     def test_report_no_reportName(self):
         report = WorkbookReport(report_output_override)
 
-        report.add_worksheet(JimmyReportWorksheet(), "Test Spreadsheet", JimmyDCFModel('appl', 2019))
+        report.add_worksheet(JimmyReportWorksheet(), "Test Spreadsheet", JimmyValuationModel('appl', 2019))
 
         with self.assertRaises(ValidationError):
             report.generate_report(None)
@@ -51,7 +51,7 @@ class TestWorkbookReport(unittest.TestCase):
         report = WorkbookReport(report_output_override)
 
         test_report = JimmyReportWorksheet()
-        test_model = JimmyDCFModel('appl', 2019)
+        test_model = JimmyValuationModel('appl', 2019)
         report.add_worksheet(test_report, 'test_sheet', test_model)
 
         wb = Workbook()

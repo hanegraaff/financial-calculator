@@ -120,8 +120,8 @@ Name                                  Stmts   Miss  Cover
 ---------------------------------------------------------
 data_provider/intrinio_data.py           98     23    77%
 data_provider/intrinio_util.py           13      0   100%
-dcf_models/base_model.py                 34      1    97%
-dcf_models/jimmy_model.py                99     12    88%
+valuation_models/base_model.py                 34      1    97%
+valuation_models/jimmy_model.py                99     12    88%
 exception/exceptions.py                  27      1    96%
 financial/calculator.py                  62      2    97%
 reporting/jimmy_report_worksheet.py      35     25    29%
