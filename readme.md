@@ -8,7 +8,7 @@ This calculator requires access to financial statements and stock prices to perf
 For details on this all works, see [this document](/how-does-it-work.md)
 
 ## The Model
-The Discounted Cash Flow model is simple to implement and requires only 3 imputs: A cashflow forecast for 4-5 years in the future, a long term growth rate and a discount rate. Although the formula is straight forward, getting the inputs right is not, and so the current implementation takes a very simplistic approach to this.
+Discounted Cash Flow analyses are simple to implement and requires only 3 imputs: A cashflow forecast for 4-5 years in the future, a long term growth rate and a discount rate. Although the formula is straight forward, getting the inputs right is not, and so the current valuation model takes a very simplistic approach to this.
 
 1) Discount rate is hardcoded, to 9.75% and can be changed programmatically.
 2) The long term growth rate is is also hardcoded and set to 2.75%
