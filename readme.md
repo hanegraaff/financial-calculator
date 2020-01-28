@@ -12,7 +12,7 @@ Discounted Cash Flow analyses are simple to implement and requires only 3 imputs
 
 1) Discount rate is hardcoded, to 9.75% and can be changed programmatically.
 2) The long term growth rate is is also hardcoded and set to 2.75%
-3) Cash flow forecast is based on a modified version of the "Jimmy" Method (https://www.youtube.com/watch?v=fd_emLLzJnk&t=500s), but it's essentially based on past history.
+3) Cash flow forecast is based on a modified version of the "Jimmy" Method (https://www.youtube.com/watch?v=fd_emLLzJnk&t=500s), but it's essentially based on historical performance.
 
 Over time, additional more sophisticated models will be made available.
 
